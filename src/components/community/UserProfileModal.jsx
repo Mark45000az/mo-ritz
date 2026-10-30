@@ -121,7 +121,12 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
           {/* Avatar */}
           <div className="profile-modal-avatar-wrapper">
             <img
-              src={avatarPreview || liveUser?.photoURL || '/profile.jpg'}
+              src={
+                avatarPreview ||
+                (liveUser?.photoURL && (liveUser.photoURL !== '/profile.jpg' || isTargetAdmin)
+                  ? liveUser.photoURL
+                  : (isTargetAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
+              }
               alt={liveUser?.displayName || 'User'}
               className="profile-modal-avatar"
             />

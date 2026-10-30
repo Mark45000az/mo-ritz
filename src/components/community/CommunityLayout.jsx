@@ -133,7 +133,7 @@ export default function CommunityLayout({ onBackToHome }) {
           {currentUser ? (
             <div className="current-user-info-bar">
               <img
-                src={userProfile?.photoURL || '/profile.jpg'}
+                src={userProfile?.photoURL || (isAdmin ? '/profile.jpg' : '/NewUserProfile.png')}
                 alt={userProfile?.displayName}
                 className="current-user-avatar"
                 onClick={() => setProfileModalUser(userProfile || { uid: currentUser.uid, ...currentUser })}

@@ -113,11 +113,11 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
         participantDetails: {
           [currentUser.uid]: {
             displayName: userProfile?.displayName || 'สมาชิก',
-            photoURL: userProfile?.photoURL || null,
+            photoURL: userProfile?.photoURL || (userProfile?.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png'),
           },
           [selectedPartner.uid]: {
             displayName: selectedPartner.displayName || 'สมาชิก',
-            photoURL: selectedPartner.photoURL || null,
+            photoURL: selectedPartner.photoURL || (selectedPartner.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png'),
           },
         },
         lastMessage: text,
@@ -127,7 +127,7 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
       await addDoc(collection(firestore, 'community_chats', chatId, 'messages'), {
         senderId: currentUser.uid,
         senderName: userProfile?.displayName || 'สมาชิก',
-        senderPhoto: userProfile?.photoURL || null,
+        senderPhoto: userProfile?.photoURL || (userProfile?.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png'),
         text,
         createdAt: serverTimestamp(),
       })
@@ -227,7 +227,7 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                   onClick={() => setSelectedPartner({ uid: otherUid, ...otherUser })}
                 >
                   <img
-                    src={otherUser.photoURL || '/profile.jpg'}
+                    src={otherUser.photoURL || (otherUser.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')}
                     alt={otherUser.displayName}
                     className="dm-conv-avatar"
                   />
@@ -256,7 +256,7 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                 ←
               </button>
               <img
-                src={selectedPartner.photoURL || '/profile.jpg'}
+                src={selectedPartner.photoURL || (selectedPartner.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')}
                 alt={selectedPartner.displayName}
                 className="dm-partner-avatar"
                 onClick={() => onSelectUser(selectedPartner)}

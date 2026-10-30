@@ -252,7 +252,11 @@ export default function AdminPanel({ onSelectUser }) {
 
                       <div className="admin-pending-author">
                         <img
-                          src={post.authorPhoto || '/profile.jpg'}
+                          src={
+                            (post.authorPhoto && (post.authorPhoto !== '/profile.jpg' || post.authorRole === 'admin'))
+                              ? post.authorPhoto
+                              : (post.authorRole === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')
+                          }
                           alt={post.authorName}
                         />
                         <span>ส่งโดย: <strong>{post.authorName}</strong></span>
@@ -382,7 +386,11 @@ export default function AdminPanel({ onSelectUser }) {
                           title="คลิกเพื่อดูโปรไฟล์หรือส่งข้อความ"
                         >
                           <img
-                            src={u.photoURL || '/profile.jpg'}
+                            src={
+                              (u.photoURL && (u.photoURL !== '/profile.jpg' || isUserAdmin))
+                                ? u.photoURL
+                                : (isUserAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+                            }
                             alt={u.displayName}
                             className="user-table-avatar"
                           />

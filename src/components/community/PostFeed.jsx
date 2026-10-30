@@ -196,19 +196,27 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
           posts.map((post) => {
             const isLiked = currentUser && post.likes?.includes(currentUser.uid)
             const canDelete = currentUser?.uid === post.authorId || isAdmin
+            const isPostAdmin = post.authorRole === 'admin' ||
+                                post.authorName === 'Moritz' ||
+                                post.authorName === 'มอริทส์ ชทริคเกอร์' ||
+                                post.authorName === 'คิดถึงคนเก่า'
+            const postAvatar = (post.authorPhoto && (post.authorPhoto !== '/profile.jpg' || isPostAdmin))
+              ? post.authorPhoto
+              : (isPostAdmin ? '/profile.jpg' : '/NewUserProfile.png')
 
             return (
               <article key={post.id} className="post-card">
                 {/* Author Info */}
                 <div className="post-card-header">
                   <img
-                    src={post.authorPhoto || '/profile.jpg'}
+                    src={postAvatar}
                     alt={post.authorName}
                     className="post-author-avatar"
                     onClick={() => onSelectUser({
                       uid: post.authorId,
                       displayName: post.authorName,
-                      photoURL: post.authorPhoto,
+                      photoURL: postAvatar,
+                      role: isPostAdmin ? 'admin' : (post.authorRole || 'member'),
                     })}
                   />
                   <div className="post-author-details">
@@ -217,7 +225,8 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                       onClick={() => onSelectUser({
                         uid: post.authorId,
                         displayName: post.authorName,
-                        photoURL: post.authorPhoto,
+                        photoURL: postAvatar,
+                        role: isPostAdmin ? 'admin' : (post.authorRole || 'member'),
                       })}
                     >
                       {post.authorName}
@@ -390,6 +399,9 @@ function CommentsSection({ postId, onOpenAuth, onSelectUser, onOpenReport, onToa
     setCommentText('')
     setCommentImage(null)
 
+    const commentAuthorPhoto = userProfile?.photoURL || (isAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+    const commentAuthorRole = isAdmin ? 'admin' : (userProfile?.role || 'member')
+
     // Optimistic UI display
     const optimisticId = 'temp_' + Date.now()
     setComments((prev) => [
@@ -400,7 +412,8 @@ function CommentsSection({ postId, onOpenAuth, onSelectUser, onOpenReport, onToa
         imageUrl: img || null,
         authorId: currentUser.uid,
         authorName: userProfile?.displayName || 'สมาชิก',
-        authorPhoto: userProfile?.photoURL || null,
+        authorPhoto: commentAuthorPhoto,
+        authorRole: commentAuthorRole,
         createdAt: null,
       },
     ])
@@ -411,7 +424,8 @@ function CommentsSection({ postId, onOpenAuth, onSelectUser, onOpenReport, onToa
         imageUrl: img || null,
         authorId: currentUser.uid,
         authorName: userProfile?.displayName || 'สมาชิก',
-        authorPhoto: userProfile?.photoURL || null,
+        authorPhoto: commentAuthorPhoto,
+        authorRole: commentAuthorRole,
         createdAt: serverTimestamp(),
       })
 
@@ -458,17 +472,25 @@ function CommentsSection({ postId, onOpenAuth, onSelectUser, onOpenReport, onToa
         {comments.map((comment) => {
           const isOwn = currentUser?.uid === comment.authorId
           const canDelete = isOwn || isAdmin
+          const isCommentAdmin = comment.authorRole === 'admin' ||
+                                 comment.authorName === 'Moritz' ||
+                                 comment.authorName === 'มอริทส์ ชทริคเกอร์' ||
+                                 comment.authorName === 'คิดถึงคนเก่า'
+          const commentAvatar = (comment.authorPhoto && (comment.authorPhoto !== '/profile.jpg' || isCommentAdmin))
+            ? comment.authorPhoto
+            : (isCommentAdmin ? '/profile.jpg' : '/NewUserProfile.png')
 
           return (
             <div key={comment.id} className="comment-item">
               <img
-                src={comment.authorPhoto || '/profile.jpg'}
+                src={commentAvatar}
                 alt={comment.authorName}
                 className="comment-avatar"
                 onClick={() => onSelectUser({
                   uid: comment.authorId,
                   displayName: comment.authorName,
-                  photoURL: comment.authorPhoto,
+                  photoURL: commentAvatar,
+                  role: isCommentAdmin ? 'admin' : (comment.authorRole || 'member'),
                 })}
               />
               <div className="comment-bubble">
@@ -478,7 +500,8 @@ function CommentsSection({ postId, onOpenAuth, onSelectUser, onOpenReport, onToa
                     onClick={() => onSelectUser({
                       uid: comment.authorId,
                       displayName: comment.authorName,
-                      photoURL: comment.authorPhoto,
+                      photoURL: commentAvatar,
+                      role: isCommentAdmin ? 'admin' : (comment.authorRole || 'member'),
                     })}
                   >
                     {comment.authorName}

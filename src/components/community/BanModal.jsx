@@ -50,7 +50,7 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
           <h3 className="ban-modal-title">จัดการระงับผู้ใช้งาน</h3>
           <div className="ban-target-user-pill">
             <img
-              src={targetUser.photoURL || '/profile.jpg'}
+              src={targetUser.photoURL || (targetUser.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')}
               alt={targetUser.displayName}
             />
             <span>{targetUser.displayName || 'สมาชิก'}</span>

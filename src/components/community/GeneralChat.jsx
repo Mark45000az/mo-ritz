@@ -177,7 +177,7 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
         text,
         authorId: currentUser.uid,
         authorName: userProfile?.displayName || 'สมาชิก',
-        authorPhoto: userProfile?.photoURL || null,
+        authorPhoto: userProfile?.photoURL || (isAdmin ? '/profile.jpg' : '/NewUserProfile.png'),
         authorRole: userProfile?.role || 'member',
         replyTo: replyData,
         reactions: {},
@@ -360,9 +360,13 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
                              msg.authorEmail === 'moritz2541@gmail.com'
           const isEditing = editingMsgId === msg.id
 
-          const dynamicPhoto = (currentUser?.uid === msg.authorId && userProfile?.photoURL)
+          const rawPhoto = (currentUser?.uid === msg.authorId && userProfile?.photoURL)
             ? userProfile.photoURL
-            : (usersMap[msg.authorId]?.photoURL || msg.authorPhoto || '/profile.jpg')
+            : (usersMap[msg.authorId]?.photoURL || msg.authorPhoto)
+
+          const dynamicPhoto = (rawPhoto && (rawPhoto !== '/profile.jpg' || isMsgAdmin))
+            ? rawPhoto
+            : (isMsgAdmin ? '/profile.jpg' : '/NewUserProfile.png')
 
           const dynamicName = (currentUser?.uid === msg.authorId && userProfile?.displayName)
             ? userProfile.displayName
@@ -600,7 +604,7 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
                       onClick={() => handleSelectMention(m.displayName || 'สมาชิก')}
                     >
                       <img
-                        src={m.photoURL || '/profile.jpg'}
+                        src={m.photoURL || (m.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')}
                         alt={m.displayName}
                         className="mention-item-avatar"
                       />
