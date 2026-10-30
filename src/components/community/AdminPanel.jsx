@@ -30,6 +30,53 @@ export default function AdminPanel({ onSelectUser }) {
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
+  // Lightbox preview state for admin inspection
+  const [lightboxGallery, setLightboxGallery] = useState(null) // { images: string[], activeIndex: number }
+  const [lightboxVideo, setLightboxVideo] = useState(null)
+
+  const handlePrevImage = (e) => {
+    e?.stopPropagation()
+    if (!lightboxGallery || !lightboxGallery.images?.length) return
+    setLightboxGallery((prev) => ({
+      ...prev,
+      activeIndex: (prev.activeIndex - 1 + prev.images.length) % prev.images.length,
+    }))
+  }
+
+  const handleNextImage = (e) => {
+    e?.stopPropagation()
+    if (!lightboxGallery || !lightboxGallery.images?.length) return
+    setLightboxGallery((prev) => ({
+      ...prev,
+      activeIndex: (prev.activeIndex + 1) % prev.images.length,
+    }))
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxGallery && lightboxGallery.images?.length > 1) {
+        if (e.key === 'ArrowLeft') {
+          setLightboxGallery((prev) => prev ? ({
+            ...prev,
+            activeIndex: (prev.activeIndex - 1 + prev.images.length) % prev.images.length,
+          }) : null)
+        }
+        if (e.key === 'ArrowRight') {
+          setLightboxGallery((prev) => prev ? ({
+            ...prev,
+            activeIndex: (prev.activeIndex + 1) % prev.images.length,
+          }) : null)
+        }
+      }
+      if (e.key === 'Escape') {
+        setLightboxGallery(null)
+        setLightboxVideo(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxGallery])
+
   // Real-time listener for pending posts
   useEffect(() => {
     if (!isAdmin) return
@@ -241,15 +288,89 @@ export default function AdminPanel({ onSelectUser }) {
                       {post.type === 'fanart' ? '🎨 แฟนอาร์ต' : '🎭 มีม'}
                     </div>
 
-                    {post.videoUrl || post.mediaType === 'video' ? (
-                      <div className="admin-pending-img-box">
-                        <video src={post.videoUrl || post.imageUrl} controls className="admin-pending-video" style={{ width: '100%', maxHeight: '220px', borderRadius: '12px' }} />
-                      </div>
-                    ) : post.imageUrl ? (
-                      <div className="admin-pending-img-box">
-                        <img src={post.imageUrl} alt={post.title} />
-                      </div>
-                    ) : null}
+                    {(() => {
+                      const postImages = Array.isArray(post.imageUrls) && post.imageUrls.length > 0
+                        ? post.imageUrls
+                        : post.imageUrl
+                          ? [post.imageUrl]
+                          : []
+                      const isVideo = Boolean(post.videoUrl || post.mediaType === 'video')
+                      const videoSrc = post.videoUrl || post.imageUrl
+
+                      if (isVideo) {
+                        return (
+                          <div className="admin-pending-video-box">
+                            <video
+                              src={videoSrc}
+                              controls
+                              playsInline
+                              className="admin-pending-video"
+                            />
+                            <button
+                              type="button"
+                              className="admin-media-expand-btn"
+                              onClick={() => setLightboxVideo(videoSrc)}
+                              title="ขยายวิดีโอเต็มจอ"
+                            >
+                              ⛶ ขยายเต็มจอ
+                            </button>
+                          </div>
+                        )
+                      }
+
+                      if (postImages.length > 1) {
+                        return (
+                          <div className="admin-pending-gallery-box">
+                            <div className="admin-pending-gallery-header">
+                              <span className="admin-pending-gallery-badge">
+                                📷 {postImages.length} รูปภาพ (คลิกเพื่อดูชัดๆ)
+                              </span>
+                            </div>
+                            <div className={`admin-pending-gallery-grid count-${Math.min(postImages.length, 4)}`}>
+                              {postImages.slice(0, 4).map((imgUrl, imgIdx) => {
+                                const isFourth = imgIdx === 3 && postImages.length > 4
+                                const remainingCount = postImages.length - 4
+                                return (
+                                  <div
+                                    key={imgIdx}
+                                    className="admin-gallery-item-wrapper"
+                                    onClick={() => setLightboxGallery({ images: postImages, activeIndex: imgIdx })}
+                                    title={`คลิกเพื่อดูรูปภาพที่ ${imgIdx + 1} ขนาดเต็ม`}
+                                  >
+                                    <img src={imgUrl} alt={`${post.title || 'รูปภาพ'} #${imgIdx + 1}`} loading="lazy" />
+                                    <div className="admin-gallery-hover-overlay">
+                                      <span>🔍 คลิกขยาย</span>
+                                    </div>
+                                    {isFourth && (
+                                      <div className="admin-gallery-more-overlay">
+                                        <span>+{remainingCount + 1}</span>
+                                      </div>
+                                    )}
+                                  </div>
+                                )
+                              })}
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      if (postImages.length === 1) {
+                        return (
+                          <div
+                            className="admin-pending-img-box clickable"
+                            onClick={() => setLightboxGallery({ images: postImages, activeIndex: 0 })}
+                            title="คลิกเพื่อขยายดูรูปขนาดเต็ม"
+                          >
+                            <img src={postImages[0]} alt={post.title} loading="lazy" />
+                            <div className="admin-img-hover-hint">
+                              <span>🔍 คลิกเพื่อขยายดูรูปขนาดเต็ม</span>
+                            </div>
+                          </div>
+                        )
+                      }
+
+                      return null
+                    })()}
 
                     <div className="admin-pending-info">
                       <h4 className="admin-pending-title">{post.title}</h4>
@@ -488,6 +609,61 @@ export default function AdminPanel({ onSelectUser }) {
         onConfirm={confirmModal.onConfirm}
         onClose={() => setConfirmModal({ isOpen: false, title: '', message: '', onConfirm: null })}
       />
+
+      {/* Interactive Gallery Lightbox for Admin Inspection */}
+      {lightboxGallery && lightboxGallery.images && lightboxGallery.images.length > 0 && (
+        <div className="lightbox-overlay" onClick={() => setLightboxGallery(null)}>
+          <div className="lightbox-content gallery-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={lightboxGallery.images[lightboxGallery.activeIndex]}
+              alt={`รูปภาพที่ ${lightboxGallery.activeIndex + 1}`}
+              className="lightbox-main-img"
+            />
+
+            {lightboxGallery.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  className="lightbox-nav-btn prev"
+                  onClick={handlePrevImage}
+                  title="รูปก่อนหน้า (←)"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="lightbox-nav-btn next"
+                  onClick={handleNextImage}
+                  title="รูปถัดไป (→)"
+                >
+                  ›
+                </button>
+                <div className="lightbox-counter-badge">
+                  {lightboxGallery.activeIndex + 1} / {lightboxGallery.images.length}
+                </div>
+              </>
+            )}
+
+            <button className="lightbox-close" onClick={() => setLightboxGallery(null)} title="ปิด (Esc)">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Video Lightbox Modal for Admin */}
+      {lightboxVideo && (
+        <div className="lightbox-overlay" onClick={() => setLightboxVideo(null)}>
+          <div className="lightbox-content video-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <video
+              src={lightboxVideo}
+              controls
+              autoPlay
+              playsInline
+              className="lightbox-main-video"
+            />
+            <button className="lightbox-close" onClick={() => setLightboxVideo(null)} title="ปิด (Esc)">✕</button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
