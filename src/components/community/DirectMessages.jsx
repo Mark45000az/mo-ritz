@@ -20,6 +20,11 @@ import ConfirmModal from './ConfirmModal'
 import Toast from './Toast'
 import '../../styles/DirectMessages.css'
 
+// Get deterministic chat ID between two users
+function getChatId(uid1, uid2) {
+  return [uid1, uid2].sort().join('_')
+}
+
 export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth }) {
   const { currentUser, userProfile, isBanned } = useAuth()
   const [conversations, setConversations] = useState([])
@@ -61,11 +66,6 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
 
     return () => unsubscribe()
   }, [currentUser])
-
-  // Get chat ID between two users
-  const getChatId = (uid1, uid2) => {
-    return [uid1, uid2].sort().join('_')
-  }
 
   // Real-time listener for messages with selected partner
   useEffect(() => {

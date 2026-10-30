@@ -32,6 +32,10 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
     return () => unsub()
   }, [user])
 
+  const targetUid = liveUser?.uid || liveUser?.id || user?.uid || user?.id
+  const isOwnProfile = Boolean(currentUser?.uid && targetUid && currentUser.uid === targetUid)
+  const isTargetAdmin = liveUser?.role === 'admin' || liveUser?.email === 'moritz2541@gmail.com'
+
   useEffect(() => {
     if (isOwnProfile && userProfile) {
       setDisplayName(userProfile.displayName || '')
@@ -39,10 +43,6 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
   }, [isOwnProfile, userProfile])
 
   if (!isOpen || !user) return null
-
-  const targetUid = liveUser?.uid || liveUser?.id || user.uid || user.id
-  const isOwnProfile = currentUser?.uid === targetUid
-  const isTargetAdmin = liveUser?.role === 'admin' || liveUser?.email === 'moritz2541@gmail.com'
 
   const hearts = liveUser?.hearts || []
   const heartCount = hearts.length
