@@ -25,7 +25,8 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
   const [posts, setPosts] = useState([])
   const [usersMap, setUsersMap] = useState({})
   const [myPendingCount, setMyPendingCount] = useState(0)
-  const [lightboxImage, setLightboxImage] = useState(null)
+  const [lightboxGallery, setLightboxGallery] = useState(null) // { images: [], activeIndex: 0 }
+  const [lightboxVideo, setLightboxVideo] = useState(null)
   const [activeCommentsPostId, setActiveCommentsPostId] = useState(null)
   const [likersModalPost, setLikersModalPost] = useState(null)
   const [editingPost, setEditingPost] = useState(null)
@@ -161,6 +162,49 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
       clearTimeout(longPressTimerRef.current)
     }
   }
+
+  const handlePrevImage = (e) => {
+    e?.stopPropagation()
+    if (!lightboxGallery || !lightboxGallery.images?.length) return
+    setLightboxGallery((prev) => ({
+      ...prev,
+      activeIndex: (prev.activeIndex - 1 + prev.images.length) % prev.images.length,
+    }))
+  }
+
+  const handleNextImage = (e) => {
+    e?.stopPropagation()
+    if (!lightboxGallery || !lightboxGallery.images?.length) return
+    setLightboxGallery((prev) => ({
+      ...prev,
+      activeIndex: (prev.activeIndex + 1) % prev.images.length,
+    }))
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (lightboxGallery && lightboxGallery.images?.length > 1) {
+        if (e.key === 'ArrowLeft') {
+          setLightboxGallery((prev) => prev ? ({
+            ...prev,
+            activeIndex: (prev.activeIndex - 1 + prev.images.length) % prev.images.length,
+          }) : null)
+        }
+        if (e.key === 'ArrowRight') {
+          setLightboxGallery((prev) => prev ? ({
+            ...prev,
+            activeIndex: (prev.activeIndex + 1) % prev.images.length,
+          }) : null)
+        }
+      }
+      if (e.key === 'Escape') {
+        setLightboxGallery(null)
+        setLightboxVideo(null)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxGallery])
 
   const getLikersPreview = (likes = []) => {
     if (!likes || likes.length === 0) return ''
@@ -371,7 +415,7 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                   {post.caption && <p className="post-card-caption">{post.caption}</p>}
                 </div>
 
-                {/* Media: Video or Image */}
+                {/* Media: Video or Multi-Images or Single Image */}
                 {post.videoUrl || post.mediaType === 'video' ? (
                   <div className="post-card-video-box">
                     <video
@@ -380,11 +424,41 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                       playsInline
                       className="post-card-video"
                     />
+                    <button
+                      type="button"
+                      className="video-expand-btn"
+                      onClick={() => setLightboxVideo(post.videoUrl || post.imageUrl)}
+                      title="ดูวิดีโอแบบเต็มจอ"
+                    >
+                      ⛶ ขยายเต็มจอ
+                    </button>
+                  </div>
+                ) : (post.imageUrls && post.imageUrls.length > 1) ? (
+                  <div className={`post-card-gallery-grid count-${Math.min(post.imageUrls.length, 4)}`}>
+                    {post.imageUrls.slice(0, 4).map((imgUrl, imgIdx) => {
+                      const isFourth = imgIdx === 3 && post.imageUrls.length > 4
+                      const remainingCount = post.imageUrls.length - 4
+                      return (
+                        <div
+                          key={imgIdx}
+                          className="gallery-item-wrapper"
+                          onClick={() => setLightboxGallery({ images: post.imageUrls, activeIndex: imgIdx })}
+                          title="คลิกเพื่อดูแกลเลอรีรูปภาพ"
+                        >
+                          <img src={imgUrl} alt={`${post.title} #${imgIdx + 1}`} loading="lazy" />
+                          {isFourth && (
+                            <div className="gallery-more-overlay">
+                              <span>+{remainingCount + 1}</span>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
                   </div>
                 ) : post.imageUrl ? (
                   <div
                     className="post-card-image-box"
-                    onClick={() => setLightboxImage(post.imageUrl)}
+                    onClick={() => setLightboxGallery({ images: [post.imageUrl], activeIndex: 0 })}
                     title="คลิกเพื่อดูรูปขนาดเต็ม"
                   >
                     <img src={post.imageUrl} alt={post.title} loading="lazy" />
@@ -457,12 +531,57 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
         )}
       </div>
 
-      {/* Lightbox Modal */}
-      {lightboxImage && (
-        <div className="lightbox-overlay" onClick={() => setLightboxImage(null)}>
-          <div className="lightbox-content">
-            <img src={lightboxImage} alt="Enlarged" />
-            <button className="lightbox-close" onClick={() => setLightboxImage(null)}>✕</button>
+      {/* Interactive Gallery Lightbox */}
+      {lightboxGallery && lightboxGallery.images && lightboxGallery.images.length > 0 && (
+        <div className="lightbox-overlay" onClick={() => setLightboxGallery(null)}>
+          <div className="lightbox-content gallery-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <img
+              src={lightboxGallery.images[lightboxGallery.activeIndex]}
+              alt={`Photo ${lightboxGallery.activeIndex + 1}`}
+              className="lightbox-main-img"
+            />
+
+            {lightboxGallery.images.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  className="lightbox-nav-btn prev"
+                  onClick={handlePrevImage}
+                  title="รูปก่อนหน้า (←)"
+                >
+                  ‹
+                </button>
+                <button
+                  type="button"
+                  className="lightbox-nav-btn next"
+                  onClick={handleNextImage}
+                  title="รูปถัดไป (→)"
+                >
+                  ›
+                </button>
+                <div className="lightbox-counter-badge">
+                  {lightboxGallery.activeIndex + 1} / {lightboxGallery.images.length}
+                </div>
+              </>
+            )}
+
+            <button className="lightbox-close" onClick={() => setLightboxGallery(null)} title="ปิด (Esc)">✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Video Lightbox Modal */}
+      {lightboxVideo && (
+        <div className="lightbox-overlay" onClick={() => setLightboxVideo(null)}>
+          <div className="lightbox-content video-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <video
+              src={lightboxVideo}
+              controls
+              autoPlay
+              playsInline
+              className="lightbox-video-player"
+            />
+            <button className="lightbox-close" onClick={() => setLightboxVideo(null)} title="ปิด (Esc)">✕</button>
           </div>
         </div>
       )}
@@ -613,6 +732,18 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
     })
   }
 
+  const handleJumpToComment = (targetCommentId) => {
+    if (!targetCommentId) return
+    const el = document.getElementById(`comment-${targetCommentId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('highlight-pulse')
+      setTimeout(() => el.classList.remove('highlight-pulse'), 2200)
+    } else {
+      onToast?.('ความคิดเห็นต้นฉบับอาจถูกลบไปแล้ว', 'info')
+    }
+  }
+
   const handleStartEditComment = (comment) => {
     setEditingCommentId(comment.id)
     setEditCommentText(comment.text || '')
@@ -750,7 +881,7 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
           const commentAuthorName = commentAuthorLive?.displayName || comment.authorName || 'สมาชิก'
 
           return (
-            <div key={comment.id} className="comment-item">
+            <div key={comment.id} id={`comment-${comment.id}`} className="comment-item">
               <img
                 src={commentAvatar}
                 alt={commentAuthorName}
@@ -828,7 +959,11 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
 
                 {/* Reply Quote inside Comment */}
                 {comment.replyTo && (
-                  <div className="comment-reply-quote">
+                  <div
+                    className="comment-reply-quote clickable"
+                    onClick={() => handleJumpToComment(comment.replyTo.id)}
+                    title="คลิกเพื่อเลื่อนไปยังความคิดเห็นที่ตอบกลับ"
+                  >
                     <span className="comment-reply-author">↳ ตอบกลับ @{comment.replyTo.authorName}:</span>
                     <span className="comment-reply-snippet">{comment.replyTo.textSnippet}</span>
                   </div>

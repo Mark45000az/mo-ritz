@@ -313,6 +313,36 @@
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 500;
+  transition: all 0.15s ease;
+}
+
+.profile-hearts-badge.clickable {
+  cursor: pointer;
+}
+
+.profile-hearts-badge.clickable:hover {
+  background: rgba(244, 63, 94, 0.2);
+  border-color: rgba(244, 63, 94, 0.5);
+  transform: translateY(-1px);
+}
+
+.profile-hearts-view-hint {
+  font-size: 11px;
+  color: #fbcfe8;
+  margin-left: 4px;
+  opacity: 0.8;
+}
+
+.profile-success-banner {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.4);
+  color: #6ee7b7;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 12px;
+  text-align: center;
+  animation: fadeIn 0.15s ease-out;
 }
 
 /* Edit Profile Trigger Button - Bright & High Contrast */

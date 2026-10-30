@@ -1,9 +1,10 @@
 import '../../styles/LikersModal.css'
 
-export default function LikersModal({ isOpen, post, usersMap = {}, onClose, onSelectUser }) {
-  if (!isOpen || !post) return null
+export default function LikersModal({ isOpen, post, likes: propLikes, title, usersMap = {}, onClose, onSelectUser }) {
+  if (!isOpen) return null
 
-  const likes = Array.isArray(post.likes) ? post.likes : []
+  const likes = Array.isArray(propLikes) ? propLikes : (Array.isArray(post?.likes) ? post.likes : [])
+  const modalTitle = title || `คนที่กดหัวใจ (${likes.length} คน)`
 
   return (
     <div className="likers-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -11,7 +12,7 @@ export default function LikersModal({ isOpen, post, usersMap = {}, onClose, onSe
         <div className="likers-modal-header">
           <div className="likers-modal-title-group">
             <span className="likers-modal-icon">❤️</span>
-            <h3 className="likers-modal-title">คนที่กดหัวใจ ({likes.length} คน)</h3>
+            <h3 className="likers-modal-title">{modalTitle}</h3>
           </div>
           <button className="likers-modal-close" onClick={onClose} aria-label="ปิด">
             ✕

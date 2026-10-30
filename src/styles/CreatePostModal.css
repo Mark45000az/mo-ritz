@@ -305,3 +305,121 @@
   color: var(--color-text-secondary);
   line-height: var(--leading-relaxed);
 }
+
+/* Multi-image preview in create modal */
+.multi-image-preview-container {
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.multi-image-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #c4b5fd;
+  font-weight: 500;
+}
+
+.btn-clear-all-images {
+  background: transparent;
+  border: none;
+  color: #f87171;
+  font-size: 11px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btn-clear-all-images:hover {
+  background: rgba(239, 68, 68, 0.15);
+}
+
+.multi-image-thumbnails-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.multi-image-thumb-card {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+}
+
+.multi-image-thumb-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.thumb-index-badge {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 10px;
+  font-weight: bold;
+  padding: 1px 5px;
+  border-radius: 4px;
+}
+
+.btn-remove-thumb {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.75);
+  border: none;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-remove-thumb:hover {
+  background: #ef4444;
+}
+
+.multi-image-add-more-card {
+  aspect-ratio: 1;
+  border-radius: 8px;
+  border: 1px dashed rgba(139, 92, 246, 0.5);
+  background: rgba(139, 92, 246, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  color: #a78bfa;
+}
+
+.multi-image-add-more-card:hover {
+  background: rgba(139, 92, 246, 0.15);
+  border-color: #8b5cf6;
+}
+
+.add-more-icon {
+  font-size: 20px;
+  font-weight: bold;
+  line-height: 1;
+}
+
+.add-more-text {
+  font-size: 10px;
+  margin-top: 2px;
+}

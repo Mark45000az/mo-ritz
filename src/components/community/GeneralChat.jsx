@@ -147,6 +147,19 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
     }, 2500)
   }
 
+  // Jump to message
+  const handleJumpToMessage = (targetMsgId) => {
+    if (!targetMsgId) return
+    const el = document.getElementById(`chat-msg-${targetMsgId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('highlight-pulse')
+      setTimeout(() => el.classList.remove('highlight-pulse'), 2200)
+    } else {
+      setToast({ show: true, message: 'ข้อความต้นฉบับอาจถูกลบหรืออยู่นอกช่วงที่แสดง', type: 'info' })
+    }
+  }
+
   // Auto-scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -376,7 +389,7 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
             : (usersMap[msg.authorId]?.displayName || msg.authorName || 'สมาชิก')
 
           return (
-            <div key={msg.id} className="chat-message-item">
+            <div key={msg.id} id={`chat-msg-${msg.id}`} className="chat-message-item">
               <img
                 src={dynamicPhoto}
                 alt={dynamicName}
@@ -392,7 +405,11 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
               <div className="chat-message-body">
                 {/* Reply quote banner if message is a reply */}
                 {msg.replyTo && (
-                  <div className="chat-reply-quote">
+                  <div
+                    className="chat-reply-quote clickable"
+                    onClick={() => handleJumpToMessage(msg.replyTo.id)}
+                    title="คลิกเพื่อเลื่อนไปยังข้อความที่ตอบกลับ"
+                  >
                     <span className="reply-arrow">↳</span>
                     <span className="reply-to-user">@{msg.replyTo.authorName}</span>:
                     <span className="reply-snippet">"{msg.replyTo.textSnippet}"</span>

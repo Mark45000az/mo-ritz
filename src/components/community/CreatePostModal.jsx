@@ -11,6 +11,7 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
   const [title, setTitle] = useState('')
   const [caption, setCaption] = useState('')
   const [mediaPreview, setMediaPreview] = useState(null)
+  const [imagePreviews, setImagePreviews] = useState([])
   const [mediaType, setMediaType] = useState('image') // 'image' | 'video'
   const [videoUrlInput, setVideoUrlInput] = useState('')
   const [uploadMode, setUploadMode] = useState('file') // 'file' | 'link'
@@ -21,55 +22,82 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
   if (!isOpen) return null
 
   const handleFileChange = async (e) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
     setError('')
 
     try {
-      if (file.type.startsWith('video/')) {
-        if (file.size > 20 * 1024 * 1024) {
+      const videoFile = files.find((f) => f.type.startsWith('video/'))
+      if (videoFile) {
+        if (videoFile.size > 20 * 1024 * 1024) {
           setError('ขนาดไฟล์วิดีโอต้องไม่เกิน 20MB หรือใช้การใส่ลิงก์วิดีโอแทน')
           return
         }
         setMediaType('video')
+        setImagePreviews([])
         const reader = new FileReader()
         reader.onload = () => {
           setMediaPreview(reader.result)
         }
-        reader.readAsDataURL(file)
-      } else if (file.type === 'image/gif') {
-        if (file.size > 5 * 1024 * 1024) {
-          setError('ขนาดไฟล์ GIF ต้องไม่เกิน 5MB')
-          return
-        }
-        setMediaType('image')
-        const reader = new FileReader()
-        reader.onload = () => {
-          setMediaPreview(reader.result)
-        }
-        reader.readAsDataURL(file)
-      } else {
-        setMediaType('image')
-        const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 })
-        setMediaPreview(compressed)
+        reader.readAsDataURL(videoFile)
+        return
       }
+
+      // Handle multiple images
+      setMediaType('image')
+      setMediaPreview(null)
+      const newImages = []
+
+      for (const file of files) {
+        if (file.type === 'image/gif') {
+          if (file.size > 5 * 1024 * 1024) {
+            setError('ขนาดไฟล์ GIF บางรูปเกิน 5MB')
+            continue
+          }
+          const base64 = await new Promise((resolve) => {
+            const reader = new FileReader()
+            reader.onload = () => resolve(reader.result)
+            reader.readAsDataURL(file)
+          })
+          newImages.push(base64)
+        } else if (file.type.startsWith('image/')) {
+          const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 })
+          newImages.push(compressed)
+        }
+      }
+
+      setImagePreviews((prev) => {
+        const combined = [...prev, ...newImages]
+        if (combined.length > 8) {
+          setError('สามารถแนบรูปภาพได้สูงสุด 8 รูปต่อหนึ่งโพสต์')
+          return combined.slice(0, 8)
+        }
+        return combined
+      })
     } catch (err) {
       setError('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + err.message)
     }
+  }
+
+  const handleRemoveImage = (indexToRemove) => {
+    setImagePreviews((prev) => prev.filter((_, i) => i !== indexToRemove))
   }
 
   const handleUseVideoLink = () => {
     if (!videoUrlInput.trim()) return
     const url = videoUrlInput.trim()
     setMediaType('video')
+    setImagePreviews([])
     setMediaPreview(url)
     setError('')
   }
 
+  const hasMedia = mediaType === 'video' ? Boolean(mediaPreview) : imagePreviews.length > 0
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!currentUser) return
-    if (!mediaPreview) {
+    if (!hasMedia) {
       setError('กรุณาเลือกรูปภาพ วิดีโอ หรือระบุลิงก์ผลงานที่จะส่ง')
       return
     }
@@ -89,7 +117,8 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
         type,
         title: title.trim(),
         caption: caption.trim(),
-        imageUrl: mediaType === 'image' ? mediaPreview : null,
+        imageUrl: mediaType === 'image' ? imagePreviews[0] : null,
+        imageUrls: mediaType === 'image' ? imagePreviews : [],
         videoUrl: mediaType === 'video' ? mediaPreview : null,
         mediaType,
         authorId: currentUser.uid,
@@ -128,6 +157,7 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
     setTitle('')
     setCaption('')
     setMediaPreview(null)
+    setImagePreviews([])
     setMediaType('image')
     setVideoUrlInput('')
     setError('')
@@ -200,17 +230,13 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
             {/* Media Upload Area */}
             {uploadMode === 'file' ? (
               <div className="create-post-image-box">
-                {mediaPreview ? (
+                {mediaType === 'video' && mediaPreview ? (
                   <div className="create-post-preview-wrapper">
-                    {mediaType === 'video' ? (
-                      <video
-                        src={mediaPreview}
-                        controls
-                        className="create-post-preview-video"
-                      />
-                    ) : (
-                      <img src={mediaPreview} alt="Preview" className="create-post-preview-img" />
-                    )}
+                    <video
+                      src={mediaPreview}
+                      controls
+                      className="create-post-preview-video"
+                    />
                     <button
                       type="button"
                       className="create-post-remove-img"
@@ -218,20 +244,64 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
                         setMediaPreview(null)
                         setVideoUrlInput('')
                       }}
-                      title="ลบและเลือกใหม่"
+                      title="ลบวิดีโอ"
                     >
-                      ลบสื่อ ✕
+                      ลบวิดีโอ ✕
                     </button>
+                  </div>
+                ) : imagePreviews.length > 0 ? (
+                  <div className="multi-image-preview-container">
+                    <div className="multi-image-preview-header">
+                      <span>📷 แนบรูปภาพแล้ว {imagePreviews.length} รูป (สูงสุด 8 รูป)</span>
+                      <button
+                        type="button"
+                        className="btn-clear-all-images"
+                        onClick={() => setImagePreviews([])}
+                      >
+                        ลบทั้งหมด ✕
+                      </button>
+                    </div>
+                    <div className="multi-image-thumbnails-grid">
+                      {imagePreviews.map((imgSrc, idx) => (
+                        <div key={idx} className="multi-image-thumb-card">
+                          <img src={imgSrc} alt={`Preview ${idx + 1}`} />
+                          <span className="thumb-index-badge">{idx + 1}</span>
+                          <button
+                            type="button"
+                            className="btn-remove-thumb"
+                            onClick={() => handleRemoveImage(idx)}
+                            title="ลบรูปนี้"
+                          >
+                            ✕
+                          </button>
+                        </div>
+                      ))}
+
+                      {imagePreviews.length < 8 && (
+                        <label className="multi-image-add-more-card" title="เลือกเพิ่มอีกรูป">
+                          <span className="add-more-icon">+</span>
+                          <span className="add-more-text">เพิ่มรูป</span>
+                          <input
+                            type="file"
+                            multiple
+                            accept="image/*"
+                            onChange={handleFileChange}
+                            style={{ display: 'none' }}
+                          />
+                        </label>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <label className="create-post-upload-label">
                     <div className="upload-placeholder-content">
                       <span className="upload-icon">🎬 / 📷</span>
                       <span className="upload-text">คลิกเพื่อเลือกรูปภาพหรือวิดีโอ</span>
-                      <span className="upload-hint">รองรับ PNG, JPG, GIF, WebP, MP4, WebM (ไม่เกิน 20MB)</span>
+                      <span className="upload-hint">เลือกได้หลายรูปพร้อมกัน (สูงสุด 8 รูป) หรือวิดีโอ 1 ไฟล์ (ไม่เกิน 20MB)</span>
                     </div>
                     <input
                       type="file"
+                      multiple
                       accept="image/*,video/*"
                       onChange={handleFileChange}
                       style={{ display: 'none' }}
@@ -321,7 +391,7 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
               <button
                 type="submit"
                 className="btn btn-primary btn-sm"
-                disabled={uploading || !mediaPreview || !title.trim()}
+                disabled={uploading || !hasMedia || !title.trim()}
               >
                 {uploading ? 'กำลังส่งผลงาน...' : 'ส่งผลงาน'}
               </button>

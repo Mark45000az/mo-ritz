@@ -128,11 +128,29 @@ export function AuthProvider({ children }) {
   }
 
   // Update Profile
-  const updateUserProfile = async ({ displayName, photoURL }) => {
+  const updateUserProfile = async (profileData = {}) => {
     if (!auth.currentUser) return
+
+    const {
+      displayName,
+      photoURL,
+      bio,
+      hobbyTag,
+      avatarFrame,
+      coverGradient,
+      coverImage,
+      statusMode
+    } = profileData
+
     const updates = {}
     if (displayName !== undefined) updates.displayName = displayName
     if (photoURL !== undefined) updates.photoURL = photoURL
+    if (bio !== undefined) updates.bio = bio
+    if (hobbyTag !== undefined) updates.hobbyTag = hobbyTag
+    if (avatarFrame !== undefined) updates.avatarFrame = avatarFrame
+    if (coverGradient !== undefined) updates.coverGradient = coverGradient
+    if (coverImage !== undefined) updates.coverImage = coverImage
+    if (statusMode !== undefined) updates.statusMode = statusMode
 
     // Update in Firebase Auth (Firebase Auth only accepts URLs < 2048 chars, not data URLs)
     const authUpdates = {}

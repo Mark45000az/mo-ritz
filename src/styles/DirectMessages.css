@@ -506,6 +506,36 @@
   color: #f3e8ff;
 }
 
+.dm-reply-quote.clickable {
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.dm-reply-quote.clickable:hover {
+  background: rgba(139, 92, 246, 0.25);
+  border-left-width: 4px;
+}
+
+@keyframes highlightPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.8);
+    transform: scale(1.02);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(139, 92, 246, 0);
+    transform: scale(1.02);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    transform: scale(1);
+  }
+}
+
+.highlight-pulse {
+  animation: highlightPulse 1.2s ease-out 2;
+  border-radius: 12px;
+}
+
 /* Message Bubble Media & Actions */
 .dm-msg-bubble-group {
   display: flex;

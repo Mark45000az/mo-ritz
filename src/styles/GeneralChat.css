@@ -79,6 +79,19 @@
   margin-bottom: 4px;
 }
 
+.chat-reply-quote.clickable {
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  width: fit-content;
+}
+
+.chat-reply-quote.clickable:hover {
+  background: rgba(139, 92, 246, 0.15);
+  color: #fff;
+}
+
 .reply-arrow {
   color: var(--color-accent-light);
   font-weight: bold;
@@ -632,4 +645,24 @@
     height: 32px;
     font-size: 12px;
   }
+}
+
+@keyframes highlightPulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0.8);
+    transform: scale(1.01);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(139, 92, 246, 0);
+    transform: scale(1.01);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(139, 92, 246, 0);
+    transform: scale(1);
+  }
+}
+
+.highlight-pulse {
+  animation: highlightPulse 1.2s ease-out 2;
+  border-radius: 8px;
 }

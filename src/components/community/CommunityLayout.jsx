@@ -3,6 +3,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp }
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { CHANNELS } from '../../config/communityConfig'
+import { isUserOnline } from '../../lib/presence'
 import GeneralChat from './GeneralChat'
 import PostFeed from './PostFeed'
 import DirectMessages from './DirectMessages'
@@ -18,6 +19,8 @@ export default function CommunityLayout({ onBackToHome }) {
   const { currentUser, userProfile, isAdmin, isBanned, logout } = useAuth()
   const [activeChannel, setActiveChannel] = useState('general')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [membersPanelOpen, setMembersPanelOpen] = useState(false)
+  const [allUsers, setAllUsers] = useState([])
 
   // Modals state
   const [authModalOpen, setAuthModalOpen] = useState(false)
@@ -79,6 +82,85 @@ export default function CommunityLayout({ onBackToHome }) {
       unsubReports()
     }
   }, [isAdmin])
+
+  // Subscribe to all registered community members
+  useEffect(() => {
+    const unsub = onSnapshot(collection(firestore, 'users'), (snapshot) => {
+      const list = snapshot.docs.map((d) => ({
+        uid: d.id,
+        ...d.data(),
+      }))
+      setAllUsers(list)
+    })
+    return () => unsub()
+  }, [])
+
+  const onlineMembers = allUsers.filter((u) => isUserOnline(u) && u.statusMode !== 'offline')
+  const offlineMembers = allUsers.filter((u) => !isUserOnline(u) || u.statusMode === 'offline')
+
+  const sortMembers = (list) => {
+    return [...list].sort((a, b) => {
+      const aAdmin = a.role === 'admin' || a.email === 'moritz2541@gmail.com' ? 1 : 0
+      const bAdmin = b.role === 'admin' || b.email === 'moritz2541@gmail.com' ? 1 : 0
+      if (bAdmin !== aAdmin) return bAdmin - aAdmin
+      const aHearts = a.hearts?.length || 0
+      const bHearts = b.hearts?.length || 0
+      if (bHearts !== aHearts) return bHearts - aHearts
+      return (a.displayName || 'สมาชิก').localeCompare(b.displayName || 'สมาชิก')
+    })
+  }
+
+  const sortedOnline = sortMembers(onlineMembers)
+  const sortedOffline = sortMembers(offlineMembers)
+
+  const renderMemberItem = (u, isOnline) => {
+    const isUserAdmin = Boolean(
+      u.role === 'admin' ||
+      u.email === 'moritz2541@gmail.com' ||
+      u.displayName === 'Moritz' ||
+      u.displayName === 'คิดถึงคนเก่า' ||
+      u.displayName === 'มอริทส์ ชทริคเกอร์'
+    )
+    const isBannedUser = Boolean(u.isBanned)
+    const rawPhoto = u.photoURL
+    const avatar = isBannedUser
+      ? '/BandAccount.png'
+      : ((rawPhoto && (rawPhoto !== '/profile.jpg' || isUserAdmin))
+          ? rawPhoto
+          : (isUserAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
+    const heartCount = u.hearts?.length || 0
+    const isVip = heartCount >= 5
+    const frame = u.avatarFrame || 'none'
+
+    return (
+      <div
+        key={u.uid}
+        className={`member-list-item ${isOnline ? 'online' : 'offline'}`}
+        onClick={() => {
+          setProfileModalUser(u)
+          if (window.innerWidth <= 1024) setMembersPanelOpen(false)
+        }}
+        title="คลิกเพื่อดูโปรไฟล์"
+      >
+        <div className={`member-avatar-wrapper frame-${frame} ${isBannedUser ? 'banned' : ''}`}>
+          <img src={avatar} alt={u.displayName || 'สมาชิก'} className="member-avatar-img" />
+          <span className={`member-status-dot ${isOnline ? 'online' : 'offline'}`} />
+        </div>
+        <div className="member-details">
+          <div className="member-name-row">
+            <span className="member-name">{u.displayName || 'สมาชิก'}</span>
+            {isUserAdmin && <span className="member-badge admin">👑 Big Boss</span>}
+            {isVip && !isUserAdmin && <span className="member-badge vip">⭐</span>}
+          </div>
+          {u.bio ? (
+            <span className="member-status-text">{u.bio}</span>
+          ) : u.hobbyTag ? (
+            <span className="member-status-text">{u.hobbyTag}</span>
+          ) : null}
+        </div>
+      </div>
+    )
+  }
 
   const handleStartDM = (user) => {
     setDmTargetUser(user)
@@ -217,9 +299,45 @@ export default function CommunityLayout({ onBackToHome }) {
             {activeChannel === 'dms' && '✉️ # ข้อความส่วนตัว'}
             {activeChannel === 'admin' && '👑 # จัดการหลังบ้าน (Big Boss)'}
           </span>
-          <button className="mobile-back-home" onClick={onBackToHome}>
-            หน้าหลัก 🏠
-          </button>
+          <div className="mobile-bar-actions">
+            <button
+              type="button"
+              className={`mobile-members-toggle ${membersPanelOpen ? 'active' : ''}`}
+              onClick={() => setMembersPanelOpen(!membersPanelOpen)}
+              title="ดูสมาชิกทั้งหมด"
+            >
+              👥 {allUsers.length}
+            </button>
+            <button className="mobile-back-home" onClick={onBackToHome} title="กลับหน้าแรก">
+              🏠
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Top Header Bar */}
+        <div className="community-desktop-bar">
+          <div className="desktop-channel-info">
+            <span className="desktop-channel-name">
+              {activeChannel === 'general' && '💬 แชททั่วไป'}
+              {activeChannel === 'fanart' && '🎨 ห้องแฟนอาร์ต'}
+              {activeChannel === 'meme' && '🎭 ห้องมีมฮาๆ'}
+              {activeChannel === 'dms' && '✉️ ข้อความส่วนตัว'}
+              {activeChannel === 'admin' && '👑 จัดการหลังบ้าน (Big Boss)'}
+            </span>
+          </div>
+          <div className="desktop-bar-actions">
+            <button
+              type="button"
+              className={`btn-toggle-members ${membersPanelOpen ? 'active' : ''}`}
+              onClick={() => setMembersPanelOpen(!membersPanelOpen)}
+              title="ดูรายชื่อสมาชิกทั้งหมด"
+            >
+              👥 สมาชิก ({allUsers.length})
+            </button>
+            <button className="desktop-back-home" onClick={onBackToHome} title="กลับสู่หน้าโปรไฟล์หลัก">
+              🏠 หน้าแรก
+            </button>
+          </div>
         </div>
 
         {/* Channel Router */}
@@ -255,6 +373,58 @@ export default function CommunityLayout({ onBackToHome }) {
           )}
         </div>
       </main>
+
+      {/* Discord-style Members Right Sidebar / Drawer */}
+      <aside className={`community-members-sidebar ${membersPanelOpen ? 'open' : ''}`}>
+        <div className="members-sidebar-header">
+          <div className="members-header-title">
+            <span className="members-icon">👥</span>
+            <span>สมาชิก ({allUsers.length})</span>
+          </div>
+          <button
+            type="button"
+            className="members-sidebar-close"
+            onClick={() => setMembersPanelOpen(false)}
+            title="ปิดแถบสมาชิก"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="members-sidebar-scroll">
+          {/* Online Section */}
+          <div className="members-group-section">
+            <div className="members-group-title">
+              🟢 ออนไลน์ — {sortedOnline.length}
+            </div>
+            {sortedOnline.length === 0 ? (
+              <div className="members-empty-note">ไม่มีสมาชิกออนไลน์ขณะนี้</div>
+            ) : (
+              sortedOnline.map((u) => renderMemberItem(u, true))
+            )}
+          </div>
+
+          {/* Offline Section */}
+          <div className="members-group-section">
+            <div className="members-group-title">
+              ⚪ ออฟไลน์ — {sortedOffline.length}
+            </div>
+            {sortedOffline.length === 0 ? (
+              <div className="members-empty-note">ไม่มีสมาชิกออฟไลน์</div>
+            ) : (
+              sortedOffline.map((u) => renderMemberItem(u, false))
+            )}
+          </div>
+        </div>
+      </aside>
+
+      {/* Backdrop for mobile members drawer */}
+      {membersPanelOpen && (
+        <div
+          className="mobile-members-backdrop"
+          onClick={() => setMembersPanelOpen(false)}
+        />
+      )}
 
       {/* Backdrop for mobile sidebar */}
       {mobileSidebarOpen && (

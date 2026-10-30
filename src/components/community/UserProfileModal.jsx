@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { doc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/firestore'
+import { doc, updateDoc, arrayUnion, arrayRemove, onSnapshot, collection } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { compressImage } from '../../lib/imageUpload'
 import { getUserStatusText, isUserOnline } from '../../lib/presence'
+import LikersModal from './LikersModal'
 import '../../styles/UserProfileModal.css'
 
 const COVER_PRESETS = [
@@ -55,10 +56,25 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
   const [saving, setSaving] = useState(false)
   const [heartSaving, setHeartSaving] = useState(false)
   const [error, setError] = useState('')
+  const [successMsg, setSuccessMsg] = useState('')
+  const [showLikersModal, setShowLikersModal] = useState(false)
+  const [usersMap, setUsersMap] = useState({})
 
   const targetUid = liveUser?.uid || liveUser?.id || user?.uid || user?.id
   const isOwnProfile = Boolean(currentUser?.uid && targetUid && currentUser.uid === targetUid)
   const isTargetAdmin = liveUser?.role === 'admin' || liveUser?.email === 'moritz2541@gmail.com'
+
+  // Fetch users directory for likers display
+  useEffect(() => {
+    const unsub = onSnapshot(collection(firestore, 'users'), (snap) => {
+      const map = {}
+      snap.docs.forEach((d) => {
+        map[d.id] = { uid: d.id, ...d.data() }
+      })
+      setUsersMap(map)
+    })
+    return () => unsub()
+  }, [])
 
   // Sync live user data from Firestore
   useEffect(() => {
@@ -185,6 +201,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
       setAvatarPreview(null)
       setNewAvatar(null)
       setEditing(false)
+      setSuccessMsg('บันทึกการแก้ไขโปรไฟล์เรียบร้อยแล้ว ✓')
+      setTimeout(() => setSuccessMsg(''), 3500)
     } catch (err) {
       setError('บันทึกข้อมูลไม่สำเร็จ: ' + err.message)
     } finally {
@@ -214,15 +232,19 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
   }
 
   // Cover style computation
-  const activeCoverBg = coverImage
-    ? `url(${coverImage}) center/cover no-repeat`
-    : (liveUser?.coverGradient || coverGradient || COVER_PRESETS[0].gradient)
+  const activeCoverBg = isOwnProfile && editing
+    ? (coverImage ? `url(${coverImage}) center/cover no-repeat` : coverGradient)
+    : (liveUser?.coverImage
+        ? `url(${liveUser.coverImage}) center/cover no-repeat`
+        : (liveUser?.coverGradient || coverGradient || COVER_PRESETS[0].gradient))
 
   // Real-time Presence Computation
   const statusDisplay = getUserStatusText(liveUser)
   const isOnline = isUserOnline(liveUser)
 
-  const currentFrame = liveUser?.avatarFrame || avatarFrame || 'none'
+  const currentFrame = isOwnProfile && editing
+    ? avatarFrame
+    : (liveUser?.avatarFrame || 'none')
 
   return (
     <div className="profile-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -283,6 +305,7 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
           </div>
 
           {error && <div className="profile-error-banner">{error}</div>}
+          {successMsg && <div className="profile-success-banner">{successMsg}</div>}
 
           {!editing ? (
             <>
@@ -324,10 +347,16 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                     </span>
                   )}
 
-                  {/* Hearts Counter Pill */}
-                  <div className="profile-hearts-badge">
+                  {/* Hearts Counter Pill (Clickable to view likers list) */}
+                  <button
+                    type="button"
+                    className="profile-hearts-badge clickable"
+                    onClick={() => setShowLikersModal(true)}
+                    title="คลิกเพื่อดูรายชื่อคนที่ให้หัวใจโปรไฟล์นี้"
+                  >
                     <span>❤️ {heartCount} คนให้หัวใจ</span>
-                  </div>
+                    <span className="profile-hearts-view-hint">👁️ ดูรายชื่อ</span>
+                  </button>
                 </div>
 
                 {liveUser?.email && isOwnProfile && (
@@ -514,6 +543,19 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
           )}
         </div>
       </div>
+
+      {/* Profile Likers Modal */}
+      <LikersModal
+        isOpen={showLikersModal}
+        likes={hearts}
+        title={`คนที่ให้หัวใจ ${liveUser?.displayName || 'โปรไฟล์นี้'} (${heartCount} คน)`}
+        usersMap={usersMap}
+        onClose={() => setShowLikersModal(false)}
+        onSelectUser={(u) => {
+          setShowLikersModal(false)
+          setLiveUser(u)
+        }}
+      />
     </div>
   )
 }

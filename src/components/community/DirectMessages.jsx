@@ -240,6 +240,19 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
     })
   }
 
+  // Jump / Scroll to Replied Message
+  const handleJumpToMessage = (targetMsgId) => {
+    if (!targetMsgId) return
+    const el = document.getElementById(`dm-msg-${targetMsgId}`)
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' })
+      el.classList.add('highlight-pulse')
+      setTimeout(() => el.classList.remove('highlight-pulse'), 2200)
+    } else {
+      setToast({ show: true, message: 'ข้อความต้นฉบับอาจถูกลบหรืออยู่นอกช่วงที่แสดง', type: 'info' })
+    }
+  }
+
   // Edit Message Handlers
   const handleStartEdit = (msg) => {
     setEditingMsgId(msg.id)
@@ -494,7 +507,7 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                   const isEditing = editingMsgId === msg.id
 
                   return (
-                    <div key={msg.id} className={`dm-msg-row ${isMine ? 'mine' : 'theirs'}`}>
+                    <div key={msg.id} id={`dm-msg-${msg.id}`} className={`dm-msg-row ${isMine ? 'mine' : 'theirs'}`}>
                       <div className="dm-msg-bubble-group">
                         <div className={`dm-msg-bubble ${msg.isUnsent ? 'unsent' : ''}`}>
                           {msg.isUnsent ? (
@@ -503,7 +516,11 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                             <>
                               {/* Reply Quote */}
                               {msg.replyTo && (
-                                <div className="dm-reply-quote">
+                                <div
+                                  className="dm-reply-quote clickable"
+                                  onClick={() => handleJumpToMessage(msg.replyTo.id)}
+                                  title="คลิกเพื่อเลื่อนไปยังข้อความที่ตอบกลับ"
+                                >
                                   <span className="dm-reply-quote-sender">↳ ตอบกลับ @{msg.replyTo.senderName}:</span>
                                   <span className="dm-reply-quote-text">{msg.replyTo.textSnippet}</span>
                                 </div>
