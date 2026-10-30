@@ -15,7 +15,7 @@ import Toast from './Toast'
 import '../../styles/CommunityLayout.css'
 
 export default function CommunityLayout({ onBackToHome }) {
-  const { currentUser, userProfile, isAdmin, logout } = useAuth()
+  const { currentUser, userProfile, isAdmin, isBanned, logout } = useAuth()
   const [activeChannel, setActiveChannel] = useState('general')
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
 
