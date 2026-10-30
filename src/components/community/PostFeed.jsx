@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import {
   collection,
   query,
@@ -16,17 +16,35 @@ import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { compressImage } from '../../lib/imageUpload'
 import ConfirmModal from './ConfirmModal'
+import LikersModal from './LikersModal'
 import Toast from './Toast'
 import '../../styles/PostFeed.css'
 
 export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser, onOpenReport }) {
   const { currentUser, isAdmin, isBanned } = useAuth()
   const [posts, setPosts] = useState([])
+  const [usersMap, setUsersMap] = useState({})
   const [myPendingCount, setMyPendingCount] = useState(0)
   const [lightboxImage, setLightboxImage] = useState(null)
   const [activeCommentsPostId, setActiveCommentsPostId] = useState(null)
+  const [likersModalPost, setLikersModalPost] = useState(null)
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
+
+  const longPressTimerRef = useRef(null)
+  const isLongPressRef = useRef(false)
+
+  // Real-time listener for users directory (to keep all avatars and names in sync)
+  useEffect(() => {
+    const unsub = onSnapshot(collection(firestore, 'users'), (snapshot) => {
+      const map = {}
+      snapshot.docs.forEach((d) => {
+        map[d.id] = { uid: d.id, ...d.data() }
+      })
+      setUsersMap(map)
+    })
+    return () => unsub()
+  }, [])
 
   // Real-time listener for approved posts of this type (in-memory sort avoids composite index requirement)
   useEffect(() => {
@@ -120,6 +138,34 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
     }
   }
 
+  const handleTouchStart = (post) => {
+    isLongPressRef.current = false
+    longPressTimerRef.current = setTimeout(() => {
+      isLongPressRef.current = true
+      setLikersModalPost(post)
+    }, 450)
+  }
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+    }
+  }
+
+  const handleTouchCancel = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current)
+    }
+  }
+
+  const getLikersPreview = (likes = []) => {
+    if (!likes || likes.length === 0) return ''
+    const names = likes.map((uid) => usersMap[uid]?.displayName || 'สมาชิก')
+    if (names.length === 1) return names[0]
+    if (names.length === 2) return `${names[0]}, ${names[1]}`
+    return `${names[0]}, ${names[1]} +${names.length - 2}`
+  }
+
   const handleDeletePost = (postId) => {
     setConfirmModal({
       isOpen: true,
@@ -194,15 +240,22 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
           </div>
         ) : (
           posts.map((post) => {
+            const authorLive = usersMap[post.authorId]
             const isLiked = currentUser && post.likes?.includes(currentUser.uid)
             const canDelete = currentUser?.uid === post.authorId || isAdmin
-            const isPostAdmin = post.authorRole === 'admin' ||
-                                post.authorName === 'Moritz' ||
-                                post.authorName === 'มอริทส์ ชทริคเกอร์' ||
-                                post.authorName === 'คิดถึงคนเก่า'
-            const postAvatar = (post.authorPhoto && (post.authorPhoto !== '/profile.jpg' || isPostAdmin))
-              ? post.authorPhoto
+            const isPostAdmin = Boolean(
+              authorLive?.role === 'admin' ||
+              post.authorRole === 'admin' ||
+              authorLive?.email === 'moritz2541@gmail.com' ||
+              post.authorName === 'Moritz' ||
+              post.authorName === 'มอริทส์ ชทริคเกอร์' ||
+              post.authorName === 'คิดถึงคนเก่า'
+            )
+            const rawAuthorPhoto = authorLive?.photoURL || post.authorPhoto
+            const postAvatar = (rawAuthorPhoto && (rawAuthorPhoto !== '/profile.jpg' || isPostAdmin))
+              ? rawAuthorPhoto
               : (isPostAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+            const postAuthorName = authorLive?.displayName || post.authorName || 'สมาชิก'
 
             return (
               <article key={post.id} className="post-card">
@@ -210,11 +263,11 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                 <div className="post-card-header">
                   <img
                     src={postAvatar}
-                    alt={post.authorName}
+                    alt={postAuthorName}
                     className="post-author-avatar"
-                    onClick={() => onSelectUser({
+                    onClick={() => onSelectUser(authorLive || {
                       uid: post.authorId,
-                      displayName: post.authorName,
+                      displayName: postAuthorName,
                       photoURL: postAvatar,
                       role: isPostAdmin ? 'admin' : (post.authorRole || 'member'),
                     })}
@@ -222,14 +275,14 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                   <div className="post-author-details">
                     <span
                       className="post-author-name"
-                      onClick={() => onSelectUser({
+                      onClick={() => onSelectUser(authorLive || {
                         uid: post.authorId,
-                        displayName: post.authorName,
+                        displayName: postAuthorName,
                         photoURL: postAvatar,
                         role: isPostAdmin ? 'admin' : (post.authorRole || 'member'),
                       })}
                     >
-                      {post.authorName}
+                      {postAuthorName}
                     </span>
                     <span className="post-timestamp">{formatTime(post.createdAt)}</span>
                   </div>
@@ -284,13 +337,40 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
 
                 {/* Footer Buttons */}
                 <div className="post-card-footer">
-                  <button
-                    className={`post-action-btn like-btn ${isLiked ? 'liked' : ''}`}
-                    onClick={() => handleLike(post)}
-                  >
-                    <span className="btn-icon">{isLiked ? '❤️' : '🤍'}</span>
-                    <span>{post.likeCount || 0}</span>
-                  </button>
+                  <div className="post-likes-group">
+                    <button
+                      className={`post-action-btn like-btn ${isLiked ? 'liked' : ''}`}
+                      onClick={() => {
+                        if (isLongPressRef.current) {
+                          isLongPressRef.current = false
+                          return
+                        }
+                        handleLike(post)
+                      }}
+                      onTouchStart={() => handleTouchStart(post)}
+                      onTouchEnd={handleTouchEnd}
+                      onTouchMove={handleTouchCancel}
+                      title={isLiked ? 'ยกเลิกการกดหัวใจ (กดค้างหรือกด 👁️ เพื่อดูรายชื่อ)' : 'กดหัวใจ (กดค้างหรือกด 👁️ เพื่อดูรายชื่อ)'}
+                    >
+                      <span className="btn-icon">{isLiked ? '❤️' : '🤍'}</span>
+                      <span>{post.likeCount || 0}</span>
+                    </button>
+
+                    {(post.likes && post.likes.length > 0) && (
+                      <button
+                        type="button"
+                        className="post-likers-btn"
+                        onClick={() => setLikersModalPost(post)}
+                        title="ดูรายชื่อคนที่กดหัวใจ"
+                        aria-label="ดูรายชื่อคนที่กดหัวใจ"
+                      >
+                        <span className="likers-eye-icon">👁️</span>
+                        <span className="likers-preview-names">
+                          {getLikersPreview(post.likes)}
+                        </span>
+                      </button>
+                    )}
+                  </div>
 
                   <button
                     className={`post-action-btn comment-btn ${activeCommentsPostId === post.id ? 'active' : ''}`}
@@ -307,6 +387,7 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                 {activeCommentsPostId === post.id && (
                   <CommentsSection
                     postId={post.id}
+                    usersMap={usersMap}
                     onOpenAuth={onOpenAuth}
                     onSelectUser={onSelectUser}
                     onOpenReport={onOpenReport}
@@ -330,6 +411,15 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
         </div>
       )}
 
+      {/* Likers Modal */}
+      <LikersModal
+        isOpen={Boolean(likersModalPost)}
+        post={likersModalPost}
+        usersMap={usersMap}
+        onClose={() => setLikersModalPost(null)}
+        onSelectUser={onSelectUser}
+      />
+
       {/* Animated Toast Feedback */}
       <Toast
         show={toast.show}
@@ -350,7 +440,7 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
   )
 }
 
-function CommentsSection({ postId, onOpenAuth, onSelectUser, onOpenReport, onToast, onConfirmModal }) {
+function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOpenReport, onToast, onConfirmModal }) {
   const { currentUser, userProfile, isAdmin, isBanned } = useAuth()
   const [comments, setComments] = useState([])
   const [commentText, setCommentText] = useState('')
@@ -470,25 +560,32 @@ function CommentsSection({ postId, onOpenAuth, onSelectUser, onOpenReport, onToa
     <div className="comments-section">
       <div className="comments-list">
         {comments.map((comment) => {
+          const commentAuthorLive = usersMap[comment.authorId]
           const isOwn = currentUser?.uid === comment.authorId
           const canDelete = isOwn || isAdmin
-          const isCommentAdmin = comment.authorRole === 'admin' ||
-                                 comment.authorName === 'Moritz' ||
-                                 comment.authorName === 'มอริทส์ ชทริคเกอร์' ||
-                                 comment.authorName === 'คิดถึงคนเก่า'
-          const commentAvatar = (comment.authorPhoto && (comment.authorPhoto !== '/profile.jpg' || isCommentAdmin))
-            ? comment.authorPhoto
+          const isCommentAdmin = Boolean(
+            commentAuthorLive?.role === 'admin' ||
+            comment.authorRole === 'admin' ||
+            commentAuthorLive?.email === 'moritz2541@gmail.com' ||
+            comment.authorName === 'Moritz' ||
+            comment.authorName === 'มอริทส์ ชทริคเกอร์' ||
+            comment.authorName === 'คิดถึงคนเก่า'
+          )
+          const rawCommentPhoto = commentAuthorLive?.photoURL || comment.authorPhoto
+          const commentAvatar = (rawCommentPhoto && (rawCommentPhoto !== '/profile.jpg' || isCommentAdmin))
+            ? rawCommentPhoto
             : (isCommentAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+          const commentAuthorName = commentAuthorLive?.displayName || comment.authorName || 'สมาชิก'
 
           return (
             <div key={comment.id} className="comment-item">
               <img
                 src={commentAvatar}
-                alt={comment.authorName}
+                alt={commentAuthorName}
                 className="comment-avatar"
-                onClick={() => onSelectUser({
+                onClick={() => onSelectUser(commentAuthorLive || {
                   uid: comment.authorId,
-                  displayName: comment.authorName,
+                  displayName: commentAuthorName,
                   photoURL: commentAvatar,
                   role: isCommentAdmin ? 'admin' : (comment.authorRole || 'member'),
                 })}
@@ -497,14 +594,14 @@ function CommentsSection({ postId, onOpenAuth, onSelectUser, onOpenReport, onToa
                 <div className="comment-header">
                   <span
                     className="comment-author"
-                    onClick={() => onSelectUser({
+                    onClick={() => onSelectUser(commentAuthorLive || {
                       uid: comment.authorId,
-                      displayName: comment.authorName,
+                      displayName: commentAuthorName,
                       photoURL: commentAvatar,
                       role: isCommentAdmin ? 'admin' : (comment.authorRole || 'member'),
                     })}
                   >
-                    {comment.authorName}
+                    {commentAuthorName}
                   </span>
                   <div className="comment-actions-bar">
                     {canDelete && (

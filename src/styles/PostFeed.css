@@ -241,6 +241,57 @@
   color: var(--color-accent-light);
 }
 
+.post-likes-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+
+.post-likers-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.22);
+  color: #fda4af;
+  padding: 5px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.post-likers-btn:hover {
+  background: rgba(244, 63, 94, 0.18);
+  border-color: rgba(244, 63, 94, 0.45);
+  color: #fff;
+  transform: translateY(-1px);
+}
+
+.likers-eye-icon {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.likers-preview-names {
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .likers-preview-names {
+    display: none;
+  }
+  .post-likers-btn {
+    padding: 5px 8px;
+  }
+}
+
 /* Comments */
 .comments-section {
   padding: var(--space-4) var(--space-5);

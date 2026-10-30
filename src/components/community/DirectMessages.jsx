@@ -29,12 +29,25 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
   const { currentUser, userProfile, isBanned } = useAuth()
   const [conversations, setConversations] = useState([])
   const [selectedPartner, setSelectedPartner] = useState(activeUser || null)
+  const [usersMap, setUsersMap] = useState({})
   const [messages, setMessages] = useState([])
   const [inputText, setInputText] = useState('')
   const [sending, setSending] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
   const messagesEndRef = useRef(null)
+
+  // Real-time listener for users directory
+  useEffect(() => {
+    const unsub = onSnapshot(collection(firestore, 'users'), (snapshot) => {
+      const map = {}
+      snapshot.docs.forEach((d) => {
+        map[d.id] = { uid: d.id, ...d.data() }
+      })
+      setUsersMap(map)
+    })
+    return () => unsub()
+  }, [])
 
   // Block status
   const blockedUsers = userProfile?.blockedUsers || []
@@ -217,7 +230,13 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
           ) : (
             conversations.map((chat) => {
               const otherUid = chat.participants.find((id) => id !== currentUser.uid)
-              const otherUser = chat.participantDetails?.[otherUid] || { displayName: 'สมาชิก' }
+              const otherUserLive = usersMap[otherUid]
+              const otherUser = otherUserLive || chat.participantDetails?.[otherUid] || { displayName: 'สมาชิก' }
+              const isOtherAdmin = otherUser.role === 'admin' || otherUser.email === 'moritz2541@gmail.com'
+              const rawOtherPhoto = otherUser.photoURL
+              const otherAvatar = (rawOtherPhoto && (rawOtherPhoto !== '/profile.jpg' || isOtherAdmin))
+                ? rawOtherPhoto
+                : (isOtherAdmin ? '/profile.jpg' : '/NewUserProfile.png')
               const isSelected = selectedPartner?.uid === otherUid
 
               return (
@@ -227,7 +246,7 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                   onClick={() => setSelectedPartner({ uid: otherUid, ...otherUser })}
                 >
                   <img
-                    src={otherUser.photoURL || (otherUser.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')}
+                    src={otherAvatar}
                     alt={otherUser.displayName}
                     className="dm-conv-avatar"
                   />
@@ -246,53 +265,64 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
       <div className={`dm-chat-window ${selectedPartner ? 'has-partner' : ''}`}>
         {selectedPartner ? (
           <>
-            <div className="dm-chat-header">
-              <button
-                type="button"
-                className="dm-mobile-back-btn"
-                onClick={() => setSelectedPartner(null)}
-                title="กลับไปหน้ารายชื่อ"
-              >
-                ←
-              </button>
-              <img
-                src={selectedPartner.photoURL || (selectedPartner.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')}
-                alt={selectedPartner.displayName}
-                className="dm-partner-avatar"
-                onClick={() => onSelectUser(selectedPartner)}
-              />
-              <div className="dm-partner-info">
-                <span
-                  className="dm-partner-name"
-                  onClick={() => onSelectUser(selectedPartner)}
-                >
-                  {selectedPartner.displayName}
-                </span>
-                <span className="dm-partner-status">
-                  {isBlocked ? '🚫 คุณบล็อกผู้ใช้นี้อยู่' : 'คุยแบบส่วนตัว 1-on-1'}
-                </span>
-              </div>
+            {(() => {
+              const livePartner = (selectedPartner?.uid && usersMap[selectedPartner.uid]) || selectedPartner
+              const isPartnerAdmin = livePartner.role === 'admin' || livePartner.email === 'moritz2541@gmail.com'
+              const rawPartnerPhoto = livePartner.photoURL
+              const partnerAvatar = (rawPartnerPhoto && (rawPartnerPhoto !== '/profile.jpg' || isPartnerAdmin))
+                ? rawPartnerPhoto
+                : (isPartnerAdmin ? '/profile.jpg' : '/NewUserProfile.png')
 
-              {/* Chat action controls */}
-              <div className="dm-header-actions">
-                <button
-                  type="button"
-                  className={`dm-control-btn ${isBlocked ? 'unblock' : 'block'}`}
-                  onClick={handleToggleBlock}
-                  title={isBlocked ? 'ปลดบล็อก' : 'บล็อกผู้ใช้'}
-                >
-                  {isBlocked ? 'ปลดบล็อก' : '🚫 บล็อก'}
-                </button>
-                <button
-                  type="button"
-                  className="dm-control-btn delete"
-                  onClick={handleDeleteChat}
-                  title="ลบบทสนทนานี้"
-                >
-                  🗑️ ลบแชท
-                </button>
-              </div>
-            </div>
+              return (
+                <div className="dm-chat-header">
+                  <button
+                    type="button"
+                    className="dm-mobile-back-btn"
+                    onClick={() => setSelectedPartner(null)}
+                    title="กลับไปหน้ารายชื่อ"
+                  >
+                    ←
+                  </button>
+                  <img
+                    src={partnerAvatar}
+                    alt={livePartner.displayName}
+                    className="dm-partner-avatar"
+                    onClick={() => onSelectUser(livePartner)}
+                  />
+                  <div className="dm-partner-info">
+                    <span
+                      className="dm-partner-name"
+                      onClick={() => onSelectUser(livePartner)}
+                    >
+                      {livePartner.displayName}
+                    </span>
+                    <span className="dm-partner-status">
+                      {isBlocked ? '🚫 คุณบล็อกผู้ใช้นี้อยู่' : 'คุยแบบส่วนตัว 1-on-1'}
+                    </span>
+                  </div>
+
+                  {/* Chat action controls */}
+                  <div className="dm-header-actions">
+                    <button
+                      type="button"
+                      className={`dm-control-btn ${isBlocked ? 'unblock' : 'block'}`}
+                      onClick={handleToggleBlock}
+                      title={isBlocked ? 'ปลดบล็อก' : 'บล็อกผู้ใช้'}
+                    >
+                      {isBlocked ? 'ปลดบล็อก' : '🚫 บล็อก'}
+                    </button>
+                    <button
+                      type="button"
+                      className="dm-control-btn delete"
+                      onClick={handleDeleteChat}
+                      title="ลบบทสนทนานี้"
+                    >
+                      🗑️ ลบแชท
+                    </button>
+                  </div>
+                </div>
+              )
+            })()}
 
             <div className="dm-messages-feed">
               {messages.length === 0 && (

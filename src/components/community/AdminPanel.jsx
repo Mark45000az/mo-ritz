@@ -6,8 +6,7 @@ import {
   onSnapshot,
   doc,
   updateDoc,
-  deleteDoc,
-  getDocs
+  deleteDoc
 } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
@@ -22,6 +21,7 @@ export default function AdminPanel({ onSelectUser }) {
   const [pendingPosts, setPendingPosts] = useState([])
   const [reports, setReports] = useState([])
   const [allUsers, setAllUsers] = useState([])
+  const [usersMap, setUsersMap] = useState({})
   const [userSearch, setUserSearch] = useState('')
   const [processingId, setProcessingId] = useState(null)
 
@@ -62,19 +62,22 @@ export default function AdminPanel({ onSelectUser }) {
     return () => unsubscribe()
   }, [isAdmin])
 
-  // Fetch users when users tab is active
+  // Real-time listener for all users directory
   useEffect(() => {
-    if (!isAdmin || activeTab !== 'users') return
-    const fetchUsers = async () => {
-      try {
-        const snap = await getDocs(collection(firestore, 'users'))
-        setAllUsers(snap.docs.map((d) => ({ id: d.id, ...d.data() })))
-      } catch (err) {
-        console.error(err)
-      }
-    }
-    fetchUsers()
-  }, [isAdmin, activeTab])
+    if (!isAdmin) return
+    const unsub = onSnapshot(collection(firestore, 'users'), (snapshot) => {
+      const map = {}
+      const list = []
+      snapshot.docs.forEach((d) => {
+        const u = { id: d.id, uid: d.id, ...d.data() }
+        map[d.id] = u
+        list.push(u)
+      })
+      setUsersMap(map)
+      setAllUsers(list)
+    })
+    return () => unsub()
+  }, [isAdmin])
 
   // Actions for Pending Posts
   const handleApprovePost = async (postId) => {
@@ -250,17 +253,27 @@ export default function AdminPanel({ onSelectUser }) {
                         <p className="admin-pending-caption">{post.caption}</p>
                       )}
 
-                      <div className="admin-pending-author">
-                        <img
-                          src={
-                            (post.authorPhoto && (post.authorPhoto !== '/profile.jpg' || post.authorRole === 'admin'))
-                              ? post.authorPhoto
-                              : (post.authorRole === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')
-                          }
-                          alt={post.authorName}
-                        />
-                        <span>ส่งโดย: <strong>{post.authorName}</strong></span>
-                      </div>
+                      {(() => {
+                        const authorLive = usersMap[post.authorId]
+                        const isPostAdmin = authorLive?.role === 'admin' || post.authorRole === 'admin'
+                        const rawPhoto = authorLive?.photoURL || post.authorPhoto
+                        const authorPhoto = (rawPhoto && (rawPhoto !== '/profile.jpg' || isPostAdmin))
+                          ? rawPhoto
+                          : (isPostAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+                        const authorName = authorLive?.displayName || post.authorName || 'สมาชิก'
+
+                        return (
+                          <div
+                            className="admin-pending-author"
+                            style={{ cursor: 'pointer' }}
+                            onClick={() => onSelectUser(authorLive || { uid: post.authorId, displayName: authorName, photoURL: authorPhoto })}
+                            title="คลิกเพื่อดูโปรไฟล์ผู้ส่ง"
+                          >
+                            <img src={authorPhoto} alt={authorName} />
+                            <span>ส่งโดย: <strong>{authorName}</strong></span>
+                          </div>
+                        )
+                      })()}
 
                       <div className="admin-pending-actions">
                         <button
