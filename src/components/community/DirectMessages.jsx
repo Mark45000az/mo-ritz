@@ -17,6 +17,7 @@ import {
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { compressImage } from '../../lib/imageUpload'
+import { getUserStatusText } from '../../lib/presence'
 import ConfirmModal from './ConfirmModal'
 import Toast from './Toast'
 import '../../styles/DirectMessages.css'
@@ -40,6 +41,9 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
   // Edit message state
   const [editingMsgId, setEditingMsgId] = useState(null)
   const [editText, setEditText] = useState('')
+
+  // Reply message state
+  const [replyingTo, setReplyingTo] = useState(null)
 
   // Delete / Unsend modal state
   const [deleteModalMsg, setDeleteModalMsg] = useState(null)
@@ -171,10 +175,12 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
     const text = inputText.trim()
     const currentMedia = mediaPreview
     const currentMediaType = mediaType
+    const currentReplyTo = replyingTo
 
     setInputText('')
     setMediaPreview(null)
     setMediaType(null)
+    setReplyingTo(null)
     setSending(true)
 
     const chatId = getChatId(currentUser.uid, selectedPartner.uid)
@@ -207,6 +213,11 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
         imageUrl: currentMediaType === 'image' ? currentMedia : null,
         videoUrl: currentMediaType === 'video' ? currentMedia : null,
         mediaType: currentMediaType || null,
+        replyTo: currentReplyTo ? {
+          id: currentReplyTo.id,
+          senderName: currentReplyTo.senderName,
+          textSnippet: currentReplyTo.textSnippet || '',
+        } : null,
         isEdited: false,
         isUnsent: false,
         deletedFor: [],
@@ -218,6 +229,15 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
     } finally {
       setSending(false)
     }
+  }
+
+  // Reply Message Handler
+  const handleStartReply = (msg) => {
+    setReplyingTo({
+      id: msg.id,
+      senderName: msg.senderName || 'สมาชิก',
+      textSnippet: msg.text?.slice(0, 60) || (msg.imageUrl ? '📷 รูปภาพ' : msg.videoUrl ? '🎬 วิดีโอ' : 'ข้อความ'),
+    })
   }
 
   // Edit Message Handlers
@@ -432,9 +452,7 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                     <span className="dm-partner-status">
                       {isBlocked
                         ? '🚫 คุณบล็อกผู้ใช้นี้อยู่'
-                        : livePartner.statusMode === 'offline'
-                          ? '⚪ ออฟไลน์'
-                          : '🟢 ออนไลน์ (1-on-1)'}
+                        : getUserStatusText(livePartner)}
                     </span>
                   </div>
 
@@ -483,6 +501,14 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                             <p className="dm-msg-unsent-text">🚫 ข้อความนี้ถูกยกเลิกแล้ว</p>
                           ) : (
                             <>
+                              {/* Reply Quote */}
+                              {msg.replyTo && (
+                                <div className="dm-reply-quote">
+                                  <span className="dm-reply-quote-sender">↳ ตอบกลับ @{msg.replyTo.senderName}:</span>
+                                  <span className="dm-reply-quote-text">{msg.replyTo.textSnippet}</span>
+                                </div>
+                              )}
+
                               {/* Attached Image */}
                               {msg.imageUrl && (
                                 <div className="dm-msg-media-box">
@@ -551,9 +577,17 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                           )}
                         </div>
 
-                        {/* Action buttons (Edit & Delete/Unsend) */}
+                        {/* Action buttons (Reply, Edit & Delete/Unsend) */}
                         {!msg.isUnsent && (
                           <div className="dm-msg-actions-bar">
+                            <button
+                              type="button"
+                              className="dm-msg-action-btn"
+                              onClick={() => handleStartReply(msg)}
+                              title="ตอบกลับข้อความนี้"
+                            >
+                              ↩️
+                            </button>
                             {isMine && !isEditing && (
                               <button
                                 type="button"
@@ -580,6 +614,24 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                 })}
               <div ref={messagesEndRef} />
             </div>
+
+            {/* Reply Preview Bar */}
+            {replyingTo && (
+              <div className="dm-reply-preview-bar">
+                <div className="dm-reply-preview-info">
+                  <span className="dm-reply-preview-label">↳ กำลังตอบกลับ <strong>@{replyingTo.senderName}</strong></span>
+                  <span className="dm-reply-preview-snippet">{replyingTo.textSnippet}</span>
+                </div>
+                <button
+                  type="button"
+                  className="dm-reply-cancel-btn"
+                  onClick={() => setReplyingTo(null)}
+                  title="ยกเลิกการตอบกลับ"
+                >
+                  ✕
+                </button>
+              </div>
+            )}
 
             {/* Media Attachment Preview Bar */}
             {mediaPreview && (

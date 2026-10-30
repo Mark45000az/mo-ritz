@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { collection, query, where, onSnapshot } from 'firebase/firestore'
+import { collection, query, where, onSnapshot, doc, updateDoc, serverTimestamp } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { CHANNELS } from '../../config/communityConfig'
@@ -29,6 +29,26 @@ export default function CommunityLayout({ onBackToHome }) {
 
   // Admin notification badge counter
   const [adminBadgeCount, setAdminBadgeCount] = useState(0)
+
+  // Heartbeat to update lastActive in Firestore
+  useEffect(() => {
+    if (!currentUser?.uid) return
+    const userRef = doc(firestore, 'users', currentUser.uid)
+    const sendHeartbeat = () => {
+      updateDoc(userRef, { lastActive: serverTimestamp() }).catch(() => {})
+    }
+    sendHeartbeat()
+    const interval = setInterval(sendHeartbeat, 90000)
+
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') sendHeartbeat()
+    }
+    window.addEventListener('visibilitychange', onVisible)
+    return () => {
+      clearInterval(interval)
+      window.removeEventListener('visibilitychange', onVisible)
+    }
+  }, [currentUser?.uid])
 
   useEffect(() => {
     if (!isAdmin) return
@@ -151,7 +171,7 @@ export default function CommunityLayout({ onBackToHome }) {
                   {isAdmin && <span className="admin-tiny-star">★</span>}
                 </div>
                 <div className={`current-user-status ${userProfile?.statusMode === 'offline' ? 'offline' : ''}`}>
-                  {userProfile?.statusMode === 'offline' ? 'ออฟไลน์ (ซ่อนสถานะ)' : 'ออนไลน์'}
+                  {userProfile?.statusMode === 'offline' ? '⚪ ซ่อนสถานะ (ออฟไลน์)' : '🟢 กำลังออนไลน์'}
                 </div>
               </div>
               <button

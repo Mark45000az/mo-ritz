@@ -416,6 +416,96 @@
   font-weight: 500;
 }
 
+/* Reply Preview Bar above input */
+.dm-reply-preview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 16px;
+  background: #201b33;
+  border-top: 1px solid rgba(139, 92, 246, 0.3);
+  border-left: 3px solid #8b5cf6;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.dm-reply-preview-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  overflow: hidden;
+}
+
+.dm-reply-preview-label {
+  font-size: 11px;
+  color: #c4b5fd;
+  font-weight: 600;
+}
+
+.dm-reply-preview-snippet {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 380px;
+}
+
+.dm-reply-cancel-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  color: #9ca3af;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.dm-reply-cancel-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #f87171;
+}
+
+/* Reply Quote in Message Bubble */
+.dm-reply-quote {
+  background: rgba(0, 0, 0, 0.25);
+  border-left: 3px solid #8b5cf6;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 6px;
+  font-size: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.dm-reply-quote-sender {
+  font-weight: 600;
+  color: #c4b5fd;
+}
+
+.dm-reply-quote-text {
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
+.dm-msg-row.mine .dm-reply-quote {
+  background: rgba(0, 0, 0, 0.2);
+  border-left-color: #f3e8ff;
+}
+
+.dm-msg-row.mine .dm-reply-quote-sender {
+  color: #f3e8ff;
+}
+
 /* Message Bubble Media & Actions */
 .dm-msg-bubble-group {
   display: flex;

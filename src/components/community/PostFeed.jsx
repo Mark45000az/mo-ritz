@@ -28,6 +28,10 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
   const [lightboxImage, setLightboxImage] = useState(null)
   const [activeCommentsPostId, setActiveCommentsPostId] = useState(null)
   const [likersModalPost, setLikersModalPost] = useState(null)
+  const [editingPost, setEditingPost] = useState(null)
+  const [editPostTitle, setEditPostTitle] = useState('')
+  const [editPostCaption, setEditPostCaption] = useState('')
+  const [isSavingPost, setIsSavingPost] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
 
@@ -185,6 +189,34 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
     })
   }
 
+  const handleStartEditPost = (post) => {
+    setEditingPost(post)
+    setEditPostTitle(post.title || '')
+    setEditPostCaption(post.caption || '')
+  }
+
+  const handleSavePostEdit = async (e) => {
+    e.preventDefault()
+    if (!editingPost || !editPostTitle.trim() || isSavingPost) return
+    setIsSavingPost(true)
+    try {
+      const postRef = doc(firestore, 'community_posts', editingPost.id)
+      await updateDoc(postRef, {
+        title: editPostTitle.trim(),
+        caption: editPostCaption.trim(),
+        isEdited: true,
+        editedAt: serverTimestamp(),
+      })
+      setToast({ show: true, message: 'แก้ไขข้อความโพสต์เรียบร้อยแล้ว ✓', type: 'success' })
+      setEditingPost(null)
+    } catch (err) {
+      console.error('Error updating post:', err)
+      setToast({ show: true, message: 'แก้ไขไม่สำเร็จ: ' + err.message, type: 'error' })
+    } finally {
+      setIsSavingPost(false)
+    }
+  }
+
   const formatTime = (timestamp) => {
     if (!timestamp?.toDate) return 'เมื่อสักครู่'
     const date = timestamp.toDate()
@@ -287,11 +319,23 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                     >
                       {postAuthorName}
                     </span>
-                    <span className="post-timestamp">{formatTime(post.createdAt)}</span>
+                    <span className="post-timestamp">
+                      {formatTime(post.createdAt)}
+                      {post.isEdited && <span className="post-edited-tag">(แก้ไขข้อความแล้ว)</span>}
+                    </span>
                   </div>
 
                   {/* Actions Dropdown / Delete / Report */}
                   <div className="post-header-actions">
+                    {canDelete && (
+                      <button
+                        className="post-edit-btn"
+                        onClick={() => handleStartEditPost(post)}
+                        title="แก้ไขข้อความโพสต์"
+                      >
+                        ✏️ แก้ไข
+                      </button>
+                    )}
                     {canDelete && (
                       <button
                         className="post-delete-btn"
@@ -432,6 +476,73 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
         onSelectUser={onSelectUser}
       />
 
+      {/* Edit Post Modal */}
+      {editingPost && (
+        <div className="edit-post-modal-overlay" onClick={() => setEditingPost(null)}>
+          <div className="edit-post-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div className="edit-post-modal-header">
+              <div className="edit-post-title-group">
+                <span className="edit-post-icon">✏️</span>
+                <h3>แก้ไขโพสต์</h3>
+              </div>
+              <button
+                type="button"
+                className="edit-post-close-btn"
+                onClick={() => setEditingPost(null)}
+                aria-label="ปิด"
+              >
+                ✕
+              </button>
+            </div>
+
+            <form onSubmit={handleSavePostEdit} className="edit-post-form">
+              <div className="edit-post-field">
+                <label className="edit-post-label">หัวข้อ / ข้อความหลัก:</label>
+                <input
+                  type="text"
+                  value={editPostTitle}
+                  onChange={(e) => setEditPostTitle(e.target.value)}
+                  maxLength={100}
+                  required
+                  className="edit-post-input"
+                  placeholder="ใส่หัวข้อผลงาน..."
+                />
+              </div>
+
+              <div className="edit-post-field">
+                <label className="edit-post-label">คำอธิบายเพิ่มเติม (แคปชั่น):</label>
+                <textarea
+                  value={editPostCaption}
+                  onChange={(e) => setEditPostCaption(e.target.value)}
+                  rows={4}
+                  maxLength={500}
+                  className="edit-post-textarea"
+                  placeholder="เขียนแคปชั่น เล่าเรื่องราว หรือคำอธิบาย..."
+                />
+              </div>
+
+              <div className="edit-post-actions">
+                <button
+                  type="button"
+                  className="edit-post-cancel-btn"
+                  onClick={() => setEditingPost(null)}
+                  disabled={isSavingPost}
+                >
+                  ยกเลิก
+                </button>
+                <button
+                  type="submit"
+                  className="edit-post-save-btn"
+                  disabled={!editPostTitle.trim() || isSavingPost}
+                >
+                  {isSavingPost ? 'กำลังบันทึก...' : '💾 บันทึกการแก้ไข'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
       {/* Animated Toast Feedback */}
       <Toast
         show={toast.show}
@@ -458,6 +569,11 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
   const [commentText, setCommentText] = useState('')
   const [commentImage, setCommentImage] = useState(null)
   const [sending, setSending] = useState(false)
+
+  // Reply & Edit state for comments
+  const [replyingToComment, setReplyingToComment] = useState(null)
+  const [editingCommentId, setEditingCommentId] = useState(null)
+  const [editCommentText, setEditCommentText] = useState('')
 
   useEffect(() => {
     const q = collection(firestore, 'community_posts', postId, 'comments')
@@ -489,6 +605,37 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
     }
   }
 
+  const handleStartReplyComment = (comment, authorName) => {
+    setReplyingToComment({
+      id: comment.id,
+      authorName,
+      textSnippet: comment.text?.slice(0, 50) || (comment.imageUrl ? '📷 รูปภาพ' : 'ข้อความ'),
+    })
+  }
+
+  const handleStartEditComment = (comment) => {
+    setEditingCommentId(comment.id)
+    setEditCommentText(comment.text || '')
+  }
+
+  const handleSaveEditComment = async (commentId) => {
+    if (!editCommentText.trim()) return
+    try {
+      const commentRef = doc(firestore, 'community_posts', postId, 'comments', commentId)
+      await updateDoc(commentRef, {
+        text: editCommentText.trim(),
+        isEdited: true,
+        editedAt: serverTimestamp(),
+      })
+      setEditingCommentId(null)
+      setEditCommentText('')
+      onToast?.('แก้ไขความคิดเห็นเรียบร้อยแล้ว ✓', 'success')
+    } catch (err) {
+      console.error('Error updating comment:', err)
+      onToast?.('แก้ไขความคิดเห็นไม่สำเร็จ: ' + err.message, 'error')
+    }
+  }
+
   const handleSendComment = async (e) => {
     e.preventDefault()
     if (!currentUser || isBanned) return
@@ -497,9 +644,11 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
     setSending(true)
     const text = commentText.trim()
     const img = commentImage
+    const currentReplyTo = replyingToComment
 
     setCommentText('')
     setCommentImage(null)
+    setReplyingToComment(null)
 
     const commentAuthorPhoto = userProfile?.photoURL || (isAdmin ? '/profile.jpg' : '/NewUserProfile.png')
     const commentAuthorRole = isAdmin ? 'admin' : (userProfile?.role || 'member')
@@ -516,6 +665,8 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
         authorName: userProfile?.displayName || 'สมาชิก',
         authorPhoto: commentAuthorPhoto,
         authorRole: commentAuthorRole,
+        replyTo: currentReplyTo,
+        isEdited: false,
         createdAt: null,
       },
     ])
@@ -528,6 +679,12 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
         authorName: userProfile?.displayName || 'สมาชิก',
         authorPhoto: commentAuthorPhoto,
         authorRole: commentAuthorRole,
+        replyTo: currentReplyTo ? {
+          id: currentReplyTo.id,
+          authorName: currentReplyTo.authorName,
+          textSnippet: currentReplyTo.textSnippet || '',
+        } : null,
+        isEdited: false,
         createdAt: serverTimestamp(),
       })
 
@@ -619,8 +776,29 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
                     {commentAuthorName}
                   </span>
                   <div className="comment-actions-bar">
+                    {currentUser && !isBanned && (
+                      <button
+                        type="button"
+                        className="comment-action-btn reply-btn"
+                        onClick={() => handleStartReplyComment(comment, commentAuthorName)}
+                        title="ตอบกลับความคิดเห็นนี้"
+                      >
+                        ↩️
+                      </button>
+                    )}
+                    {isOwn && editingCommentId !== comment.id && (
+                      <button
+                        type="button"
+                        className="comment-action-btn edit-btn"
+                        onClick={() => handleStartEditComment(comment)}
+                        title="แก้ไขความคิดเห็น"
+                      >
+                        ✏️
+                      </button>
+                    )}
                     {canDelete && (
                       <button
+                        type="button"
                         className="comment-delete-btn"
                         onClick={() => handleDeleteComment(comment.id)}
                         title="ลบคอมเมนต์"
@@ -630,6 +808,7 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
                     )}
                     {currentUser && !isOwn && (
                       <button
+                        type="button"
                         className="comment-report-btn"
                         onClick={() => onOpenReport({
                           id: comment.id,
@@ -647,7 +826,54 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
                   </div>
                 </div>
 
-                {comment.text && <p className="comment-text">{comment.text}</p>}
+                {/* Reply Quote inside Comment */}
+                {comment.replyTo && (
+                  <div className="comment-reply-quote">
+                    <span className="comment-reply-author">↳ ตอบกลับ @{comment.replyTo.authorName}:</span>
+                    <span className="comment-reply-snippet">{comment.replyTo.textSnippet}</span>
+                  </div>
+                )}
+
+                {/* Comment Text or Inline Edit */}
+                {editingCommentId === comment.id ? (
+                  <div className="comment-inline-edit-box">
+                    <input
+                      type="text"
+                      value={editCommentText}
+                      onChange={(e) => setEditCommentText(e.target.value)}
+                      className="comment-inline-edit-input"
+                      autoFocus
+                      maxLength={300}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') handleSaveEditComment(comment.id)
+                        if (e.key === 'Escape') setEditingCommentId(null)
+                      }}
+                    />
+                    <div className="comment-inline-edit-actions">
+                      <button
+                        type="button"
+                        className="comment-edit-save-btn"
+                        onClick={() => handleSaveEditComment(comment.id)}
+                      >
+                        บันทึก
+                      </button>
+                      <button
+                        type="button"
+                        className="comment-edit-cancel-btn"
+                        onClick={() => setEditingCommentId(null)}
+                      >
+                        ยกเลิก
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  comment.text && (
+                    <p className="comment-text">
+                      {comment.text}
+                      {comment.isEdited && <span className="comment-edited-tag">(แก้ไขแล้ว)</span>}
+                    </p>
+                  )
+                )}
 
                 {comment.imageUrl && (
                   <div className="comment-image-wrapper">
@@ -663,6 +889,24 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
       {/* Comment Input */}
       {currentUser ? (
         <form onSubmit={handleSendComment} className="comment-input-form">
+          {/* Comment Reply Preview Banner */}
+          {replyingToComment && (
+            <div className="comment-reply-banner">
+              <div className="comment-reply-banner-info">
+                <span className="comment-reply-banner-label">↳ ตอบกลับ <strong>@{replyingToComment.authorName}</strong></span>
+                <span className="comment-reply-banner-snippet">{replyingToComment.textSnippet}</span>
+              </div>
+              <button
+                type="button"
+                className="comment-reply-cancel-btn"
+                onClick={() => setReplyingToComment(null)}
+                title="ยกเลิกการตอบกลับ"
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
           {commentImage && (
             <div className="comment-preview-bar">
               <img src={commentImage} alt="Attachment" />

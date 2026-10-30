@@ -3,6 +3,7 @@ import { doc, updateDoc, arrayUnion, arrayRemove, onSnapshot } from 'firebase/fi
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { compressImage } from '../../lib/imageUpload'
+import { getUserStatusText, isUserOnline } from '../../lib/presence'
 import '../../styles/UserProfileModal.css'
 
 const COVER_PRESETS = [
@@ -12,6 +13,30 @@ const COVER_PRESETS = [
   { id: 'midnight', name: 'มิดไนท์', gradient: 'linear-gradient(135deg, #0f172a 0%, #312e81 50%, #1e1b4b 100%)' },
   { id: 'emerald', name: 'เอเมอรัลด์', gradient: 'linear-gradient(135deg, #059669 0%, #10b981 50%, #34d399 100%)' },
   { id: 'rose', name: 'โรสการ์เดน', gradient: 'linear-gradient(135deg, #e11d48 0%, #be185d 50%, #831843 100%)' },
+  { id: 'sakura', name: 'ดาร์กซากุระ', gradient: 'linear-gradient(135deg, #831843 0%, #db2777 50%, #f472b6 100%)' },
+  { id: 'retrowave', name: 'เรโทรเวฟ', gradient: 'linear-gradient(135deg, #4c1d95 0%, #9333ea 50%, #06b6d4 100%)' },
+  { id: 'goldensky', name: 'ประกายทอง', gradient: 'linear-gradient(135deg, #78350f 0%, #d97706 50%, #fbbf24 100%)' },
+  { id: 'deepocean', name: 'ดีฟโอเชียน', gradient: 'linear-gradient(135deg, #082f49 0%, #0284c7 50%, #38bdf8 100%)' },
+]
+
+const AVATAR_FRAMES = [
+  { id: 'none', label: 'ธรรมดา', icon: '⚪' },
+  { id: 'neon-purple', label: 'นีออนม่วง', icon: '💜' },
+  { id: 'gold-flame', label: 'มงกุฎทอง', icon: '👑' },
+  { id: 'cyber-cyan', label: 'ไซเบอร์ฟ้า', icon: '💎' },
+  { id: 'sakura-pink', label: 'ซากุระชมพู', icon: '🌸' },
+  { id: 'fire-red', label: 'ไฟร์เบลซ', icon: '🔥' },
+]
+
+const HOBBY_TAGS = [
+  '🎮 ชอบเล่นเกม',
+  '🎨 ชอบวาดรูป',
+  '🎵 ชอบฟังเพลง',
+  '🎬 สายดูคลิป',
+  '☕ สายชิล',
+  '🐾 คนรักสัตว์',
+  '✨ ครีเอเตอร์',
+  '📚 หนอนหนังสือ',
 ]
 
 export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
@@ -19,6 +44,9 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
   const [liveUser, setLiveUser] = useState(user)
   const [editing, setEditing] = useState(false)
   const [displayName, setDisplayName] = useState(userProfile?.displayName || '')
+  const [bio, setBio] = useState(userProfile?.bio || '')
+  const [hobbyTag, setHobbyTag] = useState(userProfile?.hobbyTag || '')
+  const [avatarFrame, setAvatarFrame] = useState(userProfile?.avatarFrame || 'none')
   const [newAvatar, setNewAvatar] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [coverGradient, setCoverGradient] = useState(COVER_PRESETS[0].gradient)
@@ -39,6 +67,9 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
       setCoverGradient(user.coverGradient || COVER_PRESETS[0].gradient)
       setCoverImage(user.coverImage || null)
       setStatusMode(user.statusMode || 'online')
+      setBio(user.bio || '')
+      setHobbyTag(user.hobbyTag || '')
+      setAvatarFrame(user.avatarFrame || 'none')
     }
     if (!user?.uid && !user?.id) return
     const uid = user.uid || user.id
@@ -50,6 +81,9 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
         if (data.coverGradient) setCoverGradient(data.coverGradient)
         if (data.coverImage !== undefined) setCoverImage(data.coverImage)
         if (data.statusMode) setStatusMode(data.statusMode)
+        if (data.bio !== undefined) setBio(data.bio)
+        if (data.hobbyTag !== undefined) setHobbyTag(data.hobbyTag)
+        if (data.avatarFrame) setAvatarFrame(data.avatarFrame)
       }
     })
     return () => unsub()
@@ -61,6 +95,9 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
       if (userProfile.coverGradient) setCoverGradient(userProfile.coverGradient)
       if (userProfile.coverImage !== undefined) setCoverImage(userProfile.coverImage)
       if (userProfile.statusMode) setStatusMode(userProfile.statusMode)
+      if (userProfile.bio !== undefined) setBio(userProfile.bio)
+      if (userProfile.hobbyTag !== undefined) setHobbyTag(userProfile.hobbyTag)
+      if (userProfile.avatarFrame) setAvatarFrame(userProfile.avatarFrame)
     }
   }, [isOwnProfile, userProfile])
 
@@ -133,6 +170,9 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
     try {
       const updates = {
         displayName: displayName.trim(),
+        bio: bio.trim(),
+        hobbyTag,
+        avatarFrame,
         coverGradient,
         coverImage,
         statusMode,
@@ -178,7 +218,11 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
     ? `url(${coverImage}) center/cover no-repeat`
     : (liveUser?.coverGradient || coverGradient || COVER_PRESETS[0].gradient)
 
-  const isOnline = liveUser?.statusMode !== 'offline'
+  // Real-time Presence Computation
+  const statusDisplay = getUserStatusText(liveUser)
+  const isOnline = isUserOnline(liveUser)
+
+  const currentFrame = liveUser?.avatarFrame || avatarFrame || 'none'
 
   return (
     <div className="profile-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
@@ -218,8 +262,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
         </div>
 
         <div className="profile-modal-body">
-          {/* Avatar with GIF support and Banned Account badge */}
-          <div className={`profile-modal-avatar-wrapper ${isUserBanned ? 'banned' : ''}`}>
+          {/* Avatar with Custom Frame, GIF support and Banned Account badge */}
+          <div className={`profile-modal-avatar-wrapper frame-${currentFrame} ${isUserBanned ? 'banned' : ''}`}>
             <img
               src={displayedAvatar}
               alt={liveUser?.displayName || 'User'}
@@ -262,12 +306,23 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                   )}
                 </div>
 
-                {/* Online Status Pill */}
+                {/* Bio / About text if present */}
+                {liveUser?.bio && (
+                  <p className="profile-bio-text">{liveUser.bio}</p>
+                )}
+
+                {/* Status and Hobby row */}
                 <div className="profile-status-row">
                   <span className={`profile-status-pill ${isOnline ? 'online' : 'offline'}`}>
                     <span className="status-dot" />
-                    {isOnline ? 'ออนไลน์' : 'ออฟไลน์'}
+                    {statusDisplay}
                   </span>
+
+                  {liveUser?.hobbyTag && (
+                    <span className="profile-hobby-pill">
+                      {liveUser.hobbyTag}
+                    </span>
+                  )}
 
                   {/* Hearts Counter Pill */}
                   <div className="profile-hearts-badge">
@@ -284,9 +339,12 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                 {isOwnProfile ? (
                   <button
                     type="button"
-                    className="btn btn-secondary btn-sm"
+                    className="btn-edit-profile-trigger"
                     onClick={() => {
                       setDisplayName(userProfile?.displayName || '')
+                      setBio(userProfile?.bio || '')
+                      setHobbyTag(userProfile?.hobbyTag || '')
+                      setAvatarFrame(userProfile?.avatarFrame || 'none')
                       setCoverGradient(userProfile?.coverGradient || COVER_PRESETS[0].gradient)
                       setCoverImage(userProfile?.coverImage || null)
                       setStatusMode(userProfile?.statusMode || 'online')
@@ -339,9 +397,57 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                 />
               </div>
 
+              {/* Bio / Status Message */}
+              <div className="profile-edit-field">
+                <label htmlFor="editBio">คำอธิบายตัวเอง / ข้อความประจำตัว (Bio):</label>
+                <input
+                  id="editBio"
+                  type="text"
+                  placeholder="เช่น สตรีมเมอร์สายฮา / ยินดีที่ได้รู้จักทุกคน ✨"
+                  value={bio}
+                  onChange={(e) => setBio(e.target.value)}
+                  maxLength={120}
+                />
+              </div>
+
+              {/* Avatar Frame / Aura */}
+              <div className="profile-edit-field">
+                <label>กรอบรูปโปรไฟล์ & แสงออร่า (Avatar Frame):</label>
+                <div className="avatar-frames-grid">
+                  {AVATAR_FRAMES.map((f) => (
+                    <button
+                      key={f.id}
+                      type="button"
+                      className={`avatar-frame-btn ${avatarFrame === f.id ? 'active' : ''}`}
+                      onClick={() => setAvatarFrame(f.id)}
+                    >
+                      <span>{f.icon}</span>
+                      <span>{f.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Hobby Tag */}
+              <div className="profile-edit-field">
+                <label>สิ่งที่ชอบ / สไตล์ของคุณ (Tag):</label>
+                <div className="hobby-tags-row">
+                  {HOBBY_TAGS.map((tag) => (
+                    <button
+                      key={tag}
+                      type="button"
+                      className={`hobby-tag-btn ${hobbyTag === tag ? 'active' : ''}`}
+                      onClick={() => setHobbyTag(hobbyTag === tag ? '' : tag)}
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {/* Cover Gradient Presets */}
               <div className="profile-edit-field">
-                <label>เลือกสีพื้นหลังโปรไฟล์ (Cover Color):</label>
+                <label>เลือกสีพื้นหลังโปรไฟล์ (10 โทนสี หรือกดปุ่มเปลี่ยนพื้นหลังด้านบน):</label>
                 <div className="cover-presets-row">
                   {COVER_PRESETS.map((p) => (
                     <button
