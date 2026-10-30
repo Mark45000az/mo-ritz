@@ -200,6 +200,23 @@
   transform: scale(1.015);
 }
 
+.post-card-video-box {
+  width: 100%;
+  max-height: 500px;
+  background: #000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.post-card-video {
+  width: 100%;
+  max-height: 500px;
+  background: #000;
+  outline: none;
+}
+
 .post-card-footer {
   display: flex;
   align-items: center;

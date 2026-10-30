@@ -364,9 +364,12 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
             ? userProfile.photoURL
             : (usersMap[msg.authorId]?.photoURL || msg.authorPhoto)
 
-          const dynamicPhoto = (rawPhoto && (rawPhoto !== '/profile.jpg' || isMsgAdmin))
-            ? rawPhoto
-            : (isMsgAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+          const isMsgBanned = Boolean(usersMap[msg.authorId]?.isBanned)
+          const dynamicPhoto = isMsgBanned
+            ? '/BandAccount.png'
+            : ((rawPhoto && (rawPhoto !== '/profile.jpg' || isMsgAdmin))
+                ? rawPhoto
+                : (isMsgAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
 
           const dynamicName = (currentUser?.uid === msg.authorId && userProfile?.displayName)
             ? userProfile.displayName
@@ -604,7 +607,7 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
                       onClick={() => handleSelectMention(m.displayName || 'สมาชิก')}
                     >
                       <img
-                        src={m.photoURL || (m.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')}
+                        src={m.isBanned ? '/BandAccount.png' : (m.photoURL || (m.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png'))}
                         alt={m.displayName}
                         className="mention-item-avatar"
                       />

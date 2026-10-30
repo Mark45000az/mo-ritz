@@ -251,10 +251,13 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
               post.authorName === 'มอริทส์ ชทริคเกอร์' ||
               post.authorName === 'คิดถึงคนเก่า'
             )
+            const isAuthorBanned = Boolean(authorLive?.isBanned)
             const rawAuthorPhoto = authorLive?.photoURL || post.authorPhoto
-            const postAvatar = (rawAuthorPhoto && (rawAuthorPhoto !== '/profile.jpg' || isPostAdmin))
-              ? rawAuthorPhoto
-              : (isPostAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+            const postAvatar = isAuthorBanned
+              ? '/BandAccount.png'
+              : ((rawAuthorPhoto && (rawAuthorPhoto !== '/profile.jpg' || isPostAdmin))
+                  ? rawAuthorPhoto
+                  : (isPostAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
             const postAuthorName = authorLive?.displayName || post.authorName || 'สมาชิก'
 
             return (
@@ -324,8 +327,17 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                   {post.caption && <p className="post-card-caption">{post.caption}</p>}
                 </div>
 
-                {/* Image */}
-                {post.imageUrl && (
+                {/* Media: Video or Image */}
+                {post.videoUrl || post.mediaType === 'video' ? (
+                  <div className="post-card-video-box">
+                    <video
+                      src={post.videoUrl || post.imageUrl}
+                      controls
+                      playsInline
+                      className="post-card-video"
+                    />
+                  </div>
+                ) : post.imageUrl ? (
                   <div
                     className="post-card-image-box"
                     onClick={() => setLightboxImage(post.imageUrl)}
@@ -333,7 +345,7 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                   >
                     <img src={post.imageUrl} alt={post.title} loading="lazy" />
                   </div>
-                )}
+                ) : null}
 
                 {/* Footer Buttons */}
                 <div className="post-card-footer">
@@ -571,10 +583,13 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
             comment.authorName === 'มอริทส์ ชทริคเกอร์' ||
             comment.authorName === 'คิดถึงคนเก่า'
           )
+          const isCommentBanned = Boolean(commentAuthorLive?.isBanned)
           const rawCommentPhoto = commentAuthorLive?.photoURL || comment.authorPhoto
-          const commentAvatar = (rawCommentPhoto && (rawCommentPhoto !== '/profile.jpg' || isCommentAdmin))
-            ? rawCommentPhoto
-            : (isCommentAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+          const commentAvatar = isCommentBanned
+            ? '/BandAccount.png'
+            : ((rawCommentPhoto && (rawCommentPhoto !== '/profile.jpg' || isCommentAdmin))
+                ? rawCommentPhoto
+                : (isCommentAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
           const commentAuthorName = commentAuthorLive?.displayName || comment.authorName || 'สมาชิก'
 
           return (

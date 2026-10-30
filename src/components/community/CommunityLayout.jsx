@@ -133,7 +133,11 @@ export default function CommunityLayout({ onBackToHome }) {
           {currentUser ? (
             <div className="current-user-info-bar">
               <img
-                src={userProfile?.photoURL || (isAdmin ? '/profile.jpg' : '/NewUserProfile.png')}
+                src={
+                  isBanned
+                    ? '/BandAccount.png'
+                    : (userProfile?.photoURL || (isAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
+                }
                 alt={userProfile?.displayName}
                 className="current-user-avatar"
                 onClick={() => setProfileModalUser(userProfile || { uid: currentUser.uid, ...currentUser })}
@@ -146,7 +150,9 @@ export default function CommunityLayout({ onBackToHome }) {
                   {userProfile?.displayName || 'สมาชิก'}
                   {isAdmin && <span className="admin-tiny-star">★</span>}
                 </div>
-                <div className="current-user-status">ออนไลน์</div>
+                <div className={`current-user-status ${userProfile?.statusMode === 'offline' ? 'offline' : ''}`}>
+                  {userProfile?.statusMode === 'offline' ? 'ออฟไลน์ (ซ่อนสถานะ)' : 'ออนไลน์'}
+                </div>
               </div>
               <button
                 className="btn-user-settings"

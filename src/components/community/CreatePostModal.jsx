@@ -10,7 +10,10 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
   const [type, setType] = useState(defaultType)
   const [title, setTitle] = useState('')
   const [caption, setCaption] = useState('')
-  const [imagePreview, setImagePreview] = useState(null)
+  const [mediaPreview, setMediaPreview] = useState(null)
+  const [mediaType, setMediaType] = useState('image') // 'image' | 'video'
+  const [videoUrlInput, setVideoUrlInput] = useState('')
+  const [uploadMode, setUploadMode] = useState('file') // 'file' | 'link'
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const [submittedNotice, setSubmittedNotice] = useState(false)
@@ -21,19 +24,53 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
     const file = e.target.files?.[0]
     if (!file) return
     setError('')
+
     try {
-      const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 })
-      setImagePreview(compressed)
+      if (file.type.startsWith('video/')) {
+        if (file.size > 20 * 1024 * 1024) {
+          setError('ขนาดไฟล์วิดีโอต้องไม่เกิน 20MB หรือใช้การใส่ลิงก์วิดีโอแทน')
+          return
+        }
+        setMediaType('video')
+        const reader = new FileReader()
+        reader.onload = () => {
+          setMediaPreview(reader.result)
+        }
+        reader.readAsDataURL(file)
+      } else if (file.type === 'image/gif') {
+        if (file.size > 5 * 1024 * 1024) {
+          setError('ขนาดไฟล์ GIF ต้องไม่เกิน 5MB')
+          return
+        }
+        setMediaType('image')
+        const reader = new FileReader()
+        reader.onload = () => {
+          setMediaPreview(reader.result)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        setMediaType('image')
+        const compressed = await compressImage(file, { maxWidth: 1200, maxHeight: 1200, quality: 0.8 })
+        setMediaPreview(compressed)
+      }
     } catch (err) {
-      setError(err.message)
+      setError('เกิดข้อผิดพลาดในการอ่านไฟล์: ' + err.message)
     }
+  }
+
+  const handleUseVideoLink = () => {
+    if (!videoUrlInput.trim()) return
+    const url = videoUrlInput.trim()
+    setMediaType('video')
+    setMediaPreview(url)
+    setError('')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!currentUser) return
-    if (!imagePreview) {
-      setError('กรุณาเลือกรูปภาพผลงานหรือมีมที่จะส่ง')
+    if (!mediaPreview) {
+      setError('กรุณาเลือกรูปภาพ วิดีโอ หรือระบุลิงก์ผลงานที่จะส่ง')
       return
     }
     if (!title.trim()) {
@@ -52,7 +89,9 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
         type,
         title: title.trim(),
         caption: caption.trim(),
-        imageUrl: imagePreview,
+        imageUrl: mediaType === 'image' ? mediaPreview : null,
+        videoUrl: mediaType === 'video' ? mediaPreview : null,
+        mediaType,
         authorId: currentUser.uid,
         authorName: userProfile?.displayName || 'สมาชิก',
         authorPhoto: userProfile?.photoURL || (isAdmin ? '/profile.jpg' : '/NewUserProfile.png'),
@@ -88,7 +127,9 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
   const resetForm = () => {
     setTitle('')
     setCaption('')
-    setImagePreview(null)
+    setMediaPreview(null)
+    setMediaType('image')
+    setVideoUrlInput('')
     setError('')
   }
 
@@ -101,7 +142,7 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
 
         <div className="create-post-header">
           <h3 className="create-post-title">
-            {type === 'fanart' ? '🎨 ส่งแฟนอาร์ต' : '🎭 ส่งมีม'}
+            {type === 'fanart' ? '🎨 ส่งแฟนอาร์ต (รูป/วิดีโอ)' : '🎭 ส่งมีม (รูป/วิดีโอ)'}
           </h3>
           <p className="create-post-subtitle">
             {!isAdmin
@@ -138,39 +179,107 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
               </button>
             </div>
 
-            {/* Image upload area */}
-            <div className="create-post-image-box">
-              {imagePreview ? (
-                <div className="create-post-preview-wrapper">
-                  <img src={imagePreview} alt="Preview" className="create-post-preview-img" />
-                  <button
-                    type="button"
-                    className="create-post-remove-img"
-                    onClick={() => {
-                      setImageFile(null)
-                      setImagePreview(null)
-                    }}
-                    title="ลบรูปและเลือกใหม่"
-                  >
-                    ลบรูป ✕
-                  </button>
-                </div>
-              ) : (
-                <label className="create-post-upload-label">
-                  <div className="upload-placeholder-content">
-                    <span className="upload-icon">📷</span>
-                    <span className="upload-text">คลิกเพื่อเลือกรูปภาพผลงานหรือมีม</span>
-                    <span className="upload-hint">รองรับ PNG, JPG, WebP</span>
-                  </div>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    style={{ display: 'none' }}
-                  />
-                </label>
-              )}
+            {/* Upload mode tabs (File vs Video Link) */}
+            <div className="media-mode-tabs">
+              <button
+                type="button"
+                className={`media-tab-btn ${uploadMode === 'file' ? 'active' : ''}`}
+                onClick={() => setUploadMode('file')}
+              >
+                📁 แนบไฟล์ (รูปภาพ / วิดีโอ)
+              </button>
+              <button
+                type="button"
+                className={`media-tab-btn ${uploadMode === 'link' ? 'active' : ''}`}
+                onClick={() => setUploadMode('link')}
+              >
+                🔗 ลิงก์วิดีโอ (URL)
+              </button>
             </div>
+
+            {/* Media Upload Area */}
+            {uploadMode === 'file' ? (
+              <div className="create-post-image-box">
+                {mediaPreview ? (
+                  <div className="create-post-preview-wrapper">
+                    {mediaType === 'video' ? (
+                      <video
+                        src={mediaPreview}
+                        controls
+                        className="create-post-preview-video"
+                      />
+                    ) : (
+                      <img src={mediaPreview} alt="Preview" className="create-post-preview-img" />
+                    )}
+                    <button
+                      type="button"
+                      className="create-post-remove-img"
+                      onClick={() => {
+                        setMediaPreview(null)
+                        setVideoUrlInput('')
+                      }}
+                      title="ลบและเลือกใหม่"
+                    >
+                      ลบสื่อ ✕
+                    </button>
+                  </div>
+                ) : (
+                  <label className="create-post-upload-label">
+                    <div className="upload-placeholder-content">
+                      <span className="upload-icon">🎬 / 📷</span>
+                      <span className="upload-text">คลิกเพื่อเลือกรูปภาพหรือวิดีโอ</span>
+                      <span className="upload-hint">รองรับ PNG, JPG, GIF, WebP, MP4, WebM (ไม่เกิน 20MB)</span>
+                    </div>
+                    <input
+                      type="file"
+                      accept="image/*,video/*"
+                      onChange={handleFileChange}
+                      style={{ display: 'none' }}
+                    />
+                  </label>
+                )}
+              </div>
+            ) : (
+              <div className="video-link-input-box">
+                {mediaPreview ? (
+                  <div className="create-post-preview-wrapper">
+                    <video
+                      src={mediaPreview}
+                      controls
+                      className="create-post-preview-video"
+                    />
+                    <button
+                      type="button"
+                      className="create-post-remove-img"
+                      onClick={() => {
+                        setMediaPreview(null)
+                        setVideoUrlInput('')
+                      }}
+                    >
+                      ลบลิงก์ ✕
+                    </button>
+                  </div>
+                ) : (
+                  <div className="link-input-row">
+                    <input
+                      type="url"
+                      placeholder="ใส่ URL วิดีโอ เช่น https://example.com/video.mp4"
+                      value={videoUrlInput}
+                      onChange={(e) => setVideoUrlInput(e.target.value)}
+                      className="video-url-field"
+                    />
+                    <button
+                      type="button"
+                      className="btn btn-secondary btn-sm"
+                      onClick={handleUseVideoLink}
+                      disabled={!videoUrlInput.trim()}
+                    >
+                      ใช้ลิงก์นี้
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Title */}
             <div className="create-post-field">
@@ -178,7 +287,7 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
               <input
                 id="postTitle"
                 type="text"
-                placeholder="เช่น ภาพวาดมอริทส์สุดเท่"
+                placeholder="เช่น ภาพวาดมอริทส์ หรือ วิดีโอมีมสุดปั่น"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={80}
@@ -188,17 +297,18 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
 
             {/* Caption */}
             <div className="create-post-field">
-              <label htmlFor="postCaption">คำอธิบายหรือความในใจ (ระบุหรือไม่ก็ได้)</label>
+              <label htmlFor="postCaption">คำอธิบายเพิ่มเติม (ถ้ามี)</label>
               <textarea
                 id="postCaption"
-                rows={3}
-                placeholder="เขียนข้อความหรือช่องทางติดตามผลงาน..."
+                placeholder="บอกเล่าเรื่องราวหรือที่มาของผลงานนี้..."
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
-                maxLength={400}
+                rows={3}
+                maxLength={300}
               />
             </div>
 
+            {/* Submit */}
             <div className="create-post-actions">
               <button
                 type="button"
@@ -211,9 +321,9 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
               <button
                 type="submit"
                 className="btn btn-primary btn-sm"
-                disabled={uploading}
+                disabled={uploading || !mediaPreview || !title.trim()}
               >
-                {uploading ? 'กำลังประมวลผล...' : 'ส่งผลงาน'}
+                {uploading ? 'กำลังส่งผลงาน...' : 'ส่งผลงาน'}
               </button>
             </div>
           </form>
@@ -222,4 +332,3 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
     </div>
   )
 }
-

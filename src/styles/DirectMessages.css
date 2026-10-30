@@ -338,6 +338,315 @@
   flex-shrink: 0;
 }
 
+/* ─── Media Attachment & Actions in DM ─────────────────────── */
+.dm-attach-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: #cbd5e1;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex-shrink: 0;
+}
+
+.dm-attach-btn:hover {
+  background: rgba(139, 92, 246, 0.2);
+  border-color: #8b5cf6;
+  color: #fff;
+  transform: scale(1.05);
+}
+
+.dm-attachment-preview-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 16px;
+  background: #1c182a;
+  border-top: 1px solid rgba(139, 92, 246, 0.2);
+  animation: fadeIn 0.15s ease-out;
+}
+
+.dm-attachment-thumb {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000;
+  border: 1px solid rgba(139, 92, 246, 0.4);
+}
+
+.dm-thumb-img,
+.dm-thumb-video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.dm-remove-attachment-btn {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  background: rgba(0, 0, 0, 0.75);
+  border: none;
+  color: #fff;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  cursor: pointer;
+}
+
+.dm-remove-attachment-btn:hover {
+  background: #ef4444;
+}
+
+.dm-attachment-name {
+  font-size: 12px;
+  color: #a78bfa;
+  font-weight: 500;
+}
+
+/* Message Bubble Media & Actions */
+.dm-msg-bubble-group {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  max-width: 75%;
+}
+
+.dm-msg-row.mine .dm-msg-bubble-group {
+  flex-direction: row-reverse;
+}
+
+.dm-msg-media-box {
+  margin-bottom: 6px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.dm-msg-media-img {
+  max-width: 260px;
+  max-height: 260px;
+  object-fit: contain;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.dm-msg-media-img:hover {
+  transform: scale(1.02);
+}
+
+.dm-msg-media-video {
+  max-width: 280px;
+  max-height: 240px;
+  display: block;
+  outline: none;
+  border-radius: 12px;
+}
+
+.dm-msg-bubble.unsent {
+  background: rgba(255, 255, 255, 0.04) !important;
+  border: 1px dashed rgba(255, 255, 255, 0.15) !important;
+  color: #9ca3af !important;
+}
+
+.dm-msg-unsent-text {
+  margin: 0;
+  font-size: 12px;
+  font-style: italic;
+}
+
+.dm-msg-meta {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.dm-msg-edited-tag {
+  font-size: 10px;
+  opacity: 0.65;
+}
+
+.dm-msg-actions-bar {
+  opacity: 0;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  transition: opacity 0.15s ease;
+}
+
+.dm-msg-row:hover .dm-msg-actions-bar {
+  opacity: 1;
+}
+
+.dm-msg-action-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  cursor: pointer;
+  color: #9ca3af;
+  transition: all 0.15s ease;
+}
+
+.dm-msg-action-btn:hover {
+  background: rgba(139, 92, 246, 0.25);
+  color: #fff;
+  transform: scale(1.1);
+}
+
+/* Inline Edit */
+.dm-inline-edit-box {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 180px;
+}
+
+.dm-inline-edit-input {
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+
+.dm-inline-edit-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.dm-edit-save-btn,
+.dm-edit-cancel-btn {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+}
+
+.dm-edit-save-btn {
+  background: #22c55e;
+  color: white;
+}
+
+.dm-edit-cancel-btn {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+/* Choice Modal for Delete/Unsend */
+.dm-choice-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  z-index: 1200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.dm-choice-modal-card {
+  background: #171422;
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 18px;
+  width: 100%;
+  max-width: 360px;
+  padding: 22px;
+  text-align: center;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dm-choice-modal-icon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.dm-choice-modal-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #f3f4f6;
+  margin: 0 0 8px;
+}
+
+.dm-choice-modal-desc {
+  font-size: 13px;
+  color: #9ca3af;
+  margin: 0 0 18px;
+  line-height: 1.45;
+}
+
+.dm-choice-modal-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.dm-choice-btn {
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border: none;
+  transition: all 0.15s ease;
+}
+
+.dm-choice-btn.unsend {
+  background: linear-gradient(135deg, #ef4444, #dc2626);
+  color: #fff;
+}
+
+.dm-choice-btn.unsend:hover {
+  background: linear-gradient(135deg, #f87171, #ef4444);
+}
+
+.dm-choice-btn.delete-me {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #f3f4f6;
+}
+
+.dm-choice-btn.delete-me:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.dm-choice-btn.cancel {
+  background: transparent;
+  color: #9ca3af;
+}
+
+.dm-choice-btn.cancel:hover {
+  color: #fff;
+}
+
 /* ─── Mobile Responsiveness ────────────────────────────────── */
 @media (max-width: 768px) {
   .dm-sidebar {

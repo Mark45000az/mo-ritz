@@ -241,11 +241,15 @@ export default function AdminPanel({ onSelectUser }) {
                       {post.type === 'fanart' ? '🎨 แฟนอาร์ต' : '🎭 มีม'}
                     </div>
 
-                    {post.imageUrl && (
+                    {post.videoUrl || post.mediaType === 'video' ? (
+                      <div className="admin-pending-img-box">
+                        <video src={post.videoUrl || post.imageUrl} controls className="admin-pending-video" style={{ width: '100%', maxHeight: '220px', borderRadius: '12px' }} />
+                      </div>
+                    ) : post.imageUrl ? (
                       <div className="admin-pending-img-box">
                         <img src={post.imageUrl} alt={post.title} />
                       </div>
-                    )}
+                    ) : null}
 
                     <div className="admin-pending-info">
                       <h4 className="admin-pending-title">{post.title}</h4>
@@ -257,9 +261,12 @@ export default function AdminPanel({ onSelectUser }) {
                         const authorLive = usersMap[post.authorId]
                         const isPostAdmin = authorLive?.role === 'admin' || post.authorRole === 'admin'
                         const rawPhoto = authorLive?.photoURL || post.authorPhoto
-                        const authorPhoto = (rawPhoto && (rawPhoto !== '/profile.jpg' || isPostAdmin))
-                          ? rawPhoto
-                          : (isPostAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+                        const isAuthorBanned = Boolean(authorLive?.isBanned)
+                        const authorPhoto = isAuthorBanned
+                          ? '/BandAccount.png'
+                          : ((rawPhoto && (rawPhoto !== '/profile.jpg' || isPostAdmin))
+                              ? rawPhoto
+                              : (isPostAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
                         const authorName = authorLive?.displayName || post.authorName || 'สมาชิก'
 
                         return (
@@ -400,9 +407,11 @@ export default function AdminPanel({ onSelectUser }) {
                         >
                           <img
                             src={
-                              (u.photoURL && (u.photoURL !== '/profile.jpg' || isUserAdmin))
-                                ? u.photoURL
-                                : (isUserAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+                              u.isBanned
+                                ? '/BandAccount.png'
+                                : ((u.photoURL && (u.photoURL !== '/profile.jpg' || isUserAdmin))
+                                    ? u.photoURL
+                                    : (isUserAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
                             }
                             alt={u.displayName}
                             className="user-table-avatar"

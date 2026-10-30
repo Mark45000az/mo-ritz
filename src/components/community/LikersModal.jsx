@@ -31,10 +31,13 @@ export default function LikersModal({ isOpen, post, usersMap = {}, onClose, onSe
                 u.displayName === 'คิดถึงคนเก่า' ||
                 u.displayName === 'มอริทส์ ชทริคเกอร์'
               )
+              const isBanned = Boolean(u.isBanned)
               const rawPhoto = u.photoURL
-              const avatar = (rawPhoto && (rawPhoto !== '/profile.jpg' || isUserAdmin))
-                ? rawPhoto
-                : (isUserAdmin ? '/profile.jpg' : '/NewUserProfile.png')
+              const avatar = isBanned
+                ? '/BandAccount.png'
+                : ((rawPhoto && (rawPhoto !== '/profile.jpg' || isUserAdmin))
+                    ? rawPhoto
+                    : (isUserAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
               const heartCount = u.hearts?.length || 0
               const isVip = heartCount >= 5
 
@@ -76,3 +79,4 @@ export default function LikersModal({ isOpen, post, usersMap = {}, onClose, onSe
     </div>
   )
 }
+

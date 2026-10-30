@@ -1,16 +1,38 @@
 import { useState } from 'react'
-import { doc, updateDoc, serverTimestamp } from 'firebase/firestore'
+import { doc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import '../../styles/BanModal.css'
+
+const BAN_REASONS = [
+  { id: 'harassment', label: 'ข้อความคุกคาม / หยาบคาย', icon: '🤬' },
+  { id: 'spam', label: 'สแปม / โฆษณา', icon: '📢' },
+  { id: 'nsfw', label: 'เนื้อหาไม่เหมาะสม / 18+', icon: '🔞' },
+  { id: 'rules', label: 'ละเมิดกฎคอมมูนิตี้', icon: '⚖️' },
+  { id: 'other', label: 'อื่นๆ', icon: '📝' },
+]
+
+const MUTE_DURATIONS = [
+  { id: '1h', label: '1 ชั่วโมง', hours: 1 },
+  { id: '24h', label: '24 ชั่วโมง (1 วัน)', hours: 24 },
+  { id: '3d', label: '3 วัน', hours: 72 },
+  { id: '7d', label: '7 วัน', hours: 168 },
+  { id: '30d', label: '30 วัน', hours: 720 },
+  { id: 'indefinite', label: 'จนกว่าจะปลดแบน', hours: null },
+]
 
 export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
   const [banType, setBanType] = useState('mute') // 'mute' | 'ban'
   const [reason, setReason] = useState('ข้อความคุกคาม / หยาบคาย')
   const [customReason, setCustomReason] = useState('')
+  const [duration, setDuration] = useState('24h')
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState('')
 
   if (!isOpen || !targetUser) return null
+
+  const targetAvatar = targetUser.isBanned
+    ? '/BandAccount.png'
+    : (targetUser.photoURL || (targetUser.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png'))
 
   const handleConfirm = async (e) => {
     e.preventDefault()
@@ -19,6 +41,16 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
 
     const finalReason = reason === 'อื่นๆ' ? (customReason.trim() || 'ไม่ระบุเหตุผล') : reason
 
+    // Calculate duration timestamp
+    let bannedUntil = null
+    if (banType === 'mute') {
+      const selectedDur = MUTE_DURATIONS.find((d) => d.id === duration)
+      if (selectedDur && selectedDur.hours) {
+        const ms = Date.now() + selectedDur.hours * 60 * 60 * 1000
+        bannedUntil = Timestamp.fromMillis(ms)
+      }
+    }
+
     try {
       const userRef = doc(firestore, 'users', targetUser.id || targetUser.uid)
       await updateDoc(userRef, {
@@ -26,6 +58,8 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
         banType,
         banReason: finalReason,
         bannedAt: serverTimestamp(),
+        bannedUntil,
+        banDuration: banType === 'mute' ? duration : 'permanent',
       })
 
       onSuccess?.(banType === 'ban' ? 'แบนสมาชิกถาวรเรียบร้อยแล้ว' : 'ระงับการใช้งานชั่วคราวเรียบร้อยแล้ว')
@@ -49,11 +83,9 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
           <div className="ban-modal-icon">⚖️</div>
           <h3 className="ban-modal-title">จัดการระงับผู้ใช้งาน</h3>
           <div className="ban-target-user-pill">
-            <img
-              src={targetUser.photoURL || (targetUser.role === 'admin' ? '/profile.jpg' : '/NewUserProfile.png')}
-              alt={targetUser.displayName}
-            />
+            <img src={targetAvatar} alt={targetUser.displayName} />
             <span>{targetUser.displayName || 'สมาชิก'}</span>
+            {targetUser.email && <span className="ban-user-email">({targetUser.email})</span>}
           </div>
         </div>
 
@@ -62,7 +94,7 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
         <form onSubmit={handleConfirm} className="ban-modal-form">
           {/* Level Selector */}
           <div className="ban-field">
-            <label>เลือกระดับบทลงโทษ:</label>
+            <label className="ban-field-label">เลือกระดับบทลงโทษ:</label>
             <div className="ban-type-options">
               <label className={`ban-type-card ${banType === 'mute' ? 'selected' : ''}`}>
                 <input
@@ -88,27 +120,48 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
                 />
                 <div className="ban-type-text">
                   <div className="ban-type-title">🚫 แบนถาวร (Permanent Ban)</div>
-                  <div className="ban-type-desc">ตัดสิทธิ์การใช้งานบัญชีนี้ทั้งหมดทันที</div>
+                  <div className="ban-type-desc">ตัดสิทธิ์การใช้งานบัญชีนี้ทั้งหมดทันที และรูปโปรไฟล์จะเปลี่ยนเป็นไอคอนแบน</div>
                 </div>
               </label>
             </div>
           </div>
 
-          {/* Reason Selector */}
+          {/* Duration Selector for Mute */}
+          {banType === 'mute' && (
+            <div className="ban-field">
+              <label className="ban-field-label">ระยะเวลาการระงับ:</label>
+              <div className="ban-durations-grid">
+                {MUTE_DURATIONS.map((dur) => (
+                  <button
+                    key={dur.id}
+                    type="button"
+                    className={`ban-duration-chip ${duration === dur.id ? 'active' : ''}`}
+                    onClick={() => setDuration(dur.id)}
+                  >
+                    {dur.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Reason Selector - Stylish Custom List instead of unstyled browser select */}
           <div className="ban-field">
-            <label htmlFor="banReason">เหตุผลในการระงับ:</label>
-            <select
-              id="banReason"
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="ban-select"
-            >
-              <option value="ข้อความคุกคาม / หยาบคาย">ข้อความคุกคาม / หยาบคาย</option>
-              <option value="สแปม / โฆษณา">สแปม / โฆษณา</option>
-              <option value="เนื้อหาไม่เหมาะสม / 18+">เนื้อหาไม่เหมาะสม / 18+</option>
-              <option value="ละเมิดกฎคอมมูนิตี้">ละเมิดกฎคอมมูนิตี้</option>
-              <option value="อื่นๆ">อื่นๆ</option>
-            </select>
+            <label className="ban-field-label">เหตุผลในการระงับ:</label>
+            <div className="ban-reasons-list">
+              {BAN_REASONS.map((r) => (
+                <button
+                  key={r.id}
+                  type="button"
+                  className={`ban-reason-btn ${reason === r.label ? 'active' : ''}`}
+                  onClick={() => setReason(r.label)}
+                >
+                  <span className="ban-reason-icon">{r.icon}</span>
+                  <span className="ban-reason-text">{r.label}</span>
+                  {reason === r.label && <span className="ban-reason-check">✓</span>}
+                </button>
+              ))}
+            </div>
           </div>
 
           {reason === 'อื่นๆ' && (
@@ -128,7 +181,7 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
           <div className="ban-modal-actions">
             <button
               type="button"
-              className="btn btn-secondary btn-sm"
+              className="ban-btn-cancel"
               onClick={onClose}
               disabled={submitting}
             >
@@ -136,10 +189,10 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
             </button>
             <button
               type="submit"
-              className="btn btn-danger btn-sm"
+              className={`ban-btn-submit ${banType === 'ban' ? 'danger' : 'warn'}`}
               disabled={submitting}
             >
-              {submitting ? 'กำลังดำเนินการ...' : banType === 'ban' ? 'ยืนยันการแบนถาวร' : 'ยืนยันการระงับ'}
+              {submitting ? 'กำลังดำเนินการ...' : banType === 'ban' ? '🚫 ยืนยันการแบนถาวร' : '⚠️ ยืนยันการระงับ'}
             </button>
           </div>
         </form>
@@ -147,4 +200,3 @@ export default function BanModal({ isOpen, onClose, targetUser, onSuccess }) {
     </div>
   )
 }
-
