@@ -1,0 +1,175 @@
+/* ─── BanModal.css ──────────────────────────────────────────── */
+.ban-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  z-index: 1100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-4);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.ban-modal-card {
+  position: relative;
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-2xl);
+  width: 100%;
+  max-width: 480px;
+  padding: var(--space-6);
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.6);
+  animation: slideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ban-modal-close {
+  position: absolute;
+  top: var(--space-4);
+  right: var(--space-4);
+  background: transparent;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: var(--text-base);
+  cursor: pointer;
+  padding: var(--space-2);
+}
+
+.ban-modal-header {
+  text-align: center;
+  margin-bottom: var(--space-5);
+}
+
+.ban-modal-icon {
+  font-size: 36px;
+  margin-bottom: var(--space-2);
+}
+
+.ban-modal-title {
+  font-size: var(--text-xl);
+  font-weight: var(--weight-bold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.ban-target-user-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: var(--text-sm);
+  color: var(--color-text-primary);
+}
+
+.ban-target-user-pill img {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-full);
+  object-fit: cover;
+}
+
+.ban-modal-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.ban-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ban-field label {
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  color: var(--color-text-secondary);
+}
+
+.ban-type-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.ban-type-card {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: 10px 14px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ban-type-card:hover {
+  border-color: var(--color-border-hover);
+}
+
+.ban-type-card.selected {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+}
+
+.ban-type-card.danger.selected {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.ban-type-card input {
+  margin-top: 3px;
+}
+
+.ban-type-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+}
+
+.ban-type-desc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+}
+
+.ban-select,
+.ban-input {
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-primary);
+  font-size: var(--text-sm);
+  outline: none;
+}
+
+.ban-select:focus,
+.ban-input:focus {
+  border-color: var(--color-accent);
+}
+
+.ban-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  margin-top: var(--space-2);
+}
+
+.ban-modal-error {
+  background: rgba(239, 68, 68, 0.15);
+  color: #fca5a5;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  margin-bottom: var(--space-2);
+}
+

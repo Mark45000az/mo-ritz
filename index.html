@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="th">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- Primary Meta Tags -->
+    <title>Moritz — คิดถึงคนเก่า</title>
+    <meta name="title" content="Moritz — คิดถึงคนเก่า" />
+    <meta
+      name="description"
+      content="เว็บไซต์ประจำตัวของ Moritz คอนเทนต์ครีเอเตอร์บน YouTube และ TikTok คนอีสานรักอิสระ"
+    />
+
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="YOUR_SITE_URL" />
+    <meta property="og:title" content="Moritz — คิดถึงคนเก่า" />
+    <meta
+      property="og:description"
+      content="เว็บไซต์ประจำตัวของ Moritz คอนเทนต์ครีเอเตอร์บน YouTube และ TikTok คนอีสานรักอิสระ"
+    />
+    <meta property="og:image" content="/og-image.jpg" />
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta property="twitter:url" content="YOUR_SITE_URL" />
+    <meta property="twitter:title" content="Moritz — คิดถึงคนเก่า" />
+    <meta
+      property="twitter:description"
+      content="เว็บไซต์ประจำตัวของ Moritz คอนเทนต์ครีเอเตอร์บน YouTube และ TikTok คนอีสานรักอิสระ"
+    />
+    <meta property="twitter:image" content="/og-image.jpg" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+
+    <!-- Google Fonts: Sarabun (Thai) + Inter (EN) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Eradicate Netlify badge / drawer overlays safely -->
+    <style>
+      #netlify-badge,
+      .netlify-badge,
+      [data-netlify-badge],
+      [data-netlify-drawer],
+      netlify-drawer,
+      div[class*="netlify"],
+      div[id*="netlify"],
+      iframe[src*="netlify"],
+      a[href*="netlify.com"] {
+        display: none !important;
+        visibility: hidden !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+        position: fixed !important;
+        top: -99999px !important;
+        left: -99999px !important;
+        width: 0 !important;
+        height: 0 !important;
+        z-index: -99999 !important;
+      }
+    </style>
+    <script>
+      (function() {
+        function hideNetlifyBadge() {
+          try {
+            var outside = document.querySelectorAll('body > :not(#root)');
+            for (var i = 0; i < outside.length; i++) {
+              var el = outside[i];
+              var text = el.textContent || '';
+              var href = el.href || '';
+              if (
+                href.indexOf('netlify.com') !== -1 ||
+                text.indexOf('Powered by Netlify') !== -1 ||
+                (el.id && el.id.indexOf('netlify') !== -1)
+              ) {
+                el.style.setProperty('display', 'none', 'important');
+                el.style.setProperty('visibility', 'hidden', 'important');
+                el.style.setProperty('pointer-events', 'none', 'important');
+              }
+            }
+          } catch (e) {}
+        }
+        setInterval(hideNetlifyBadge, 500);
+        window.addEventListener('DOMContentLoaded', hideNetlifyBadge);
+        window.addEventListener('load', hideNetlifyBadge);
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

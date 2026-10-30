@@ -1,0 +1,134 @@
+/* ─── Donation Section ───────────────────────────────────── */
+.donation {
+  position: relative;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Subtle radial glow background */
+.donation-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(139, 92, 246, 0.06) 0%,
+    transparent 70%
+  );
+}
+
+.donation-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 600px;
+  margin-inline: auto;
+}
+
+.donation-icon-wrapper {
+  width: 72px;
+  height: 72px;
+  background: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
+  border-radius: var(--radius-2xl);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-inline: auto;
+  margin-bottom: var(--space-6);
+  transition: transform var(--transition-base);
+}
+
+.donation-icon-wrapper:hover {
+  transform: scale(1.05);
+}
+
+.donation-icon {
+  width: 36px;
+  height: 36px;
+  color: var(--color-accent-light);
+}
+
+.donation-title {
+  font-size: clamp(var(--text-2xl), 4vw, var(--text-4xl));
+  font-weight: var(--weight-extrabold);
+  letter-spacing: -0.02em;
+  margin-bottom: var(--space-4);
+}
+
+.donation-desc {
+  font-size: var(--text-lg);
+  color: var(--color-text-secondary);
+  line-height: var(--leading-relaxed);
+  margin-bottom: var(--space-6);
+}
+
+.donation-thank-you {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  font-style: italic;
+  margin-bottom: var(--space-10);
+  line-height: var(--leading-relaxed);
+}
+
+.donation-btn-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-4);
+}
+
+.donation-platform-note {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  letter-spacing: 0.04em;
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.donation-platform-note svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Cards row below CTA */
+.donation-benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-4);
+  margin-top: var(--space-12);
+  text-align: left;
+}
+
+.donation-benefit-card {
+  padding: var(--space-5);
+  background: var(--color-bg-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+}
+
+.donation-benefit-icon {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-3);
+  display: block;
+}
+
+.donation-benefit-title {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-semibold);
+  color: var(--color-text-primary);
+  margin-bottom: var(--space-2);
+}
+
+.donation-benefit-desc {
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: var(--leading-relaxed);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .donation-benefits {
+    grid-template-columns: 1fr;
+  }
+}
