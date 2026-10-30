@@ -33,6 +33,37 @@ export default function CommunityLayout({ onBackToHome }) {
   // Admin notification badge counter
   const [adminBadgeCount, setAdminBadgeCount] = useState(0)
 
+  // Real-time unread DM notifications counter (Messenger-style)
+  const [unreadDmCount, setUnreadDmCount] = useState(0)
+
+  useEffect(() => {
+    if (!currentUser?.uid) {
+      setUnreadDmCount(0)
+      return
+    }
+
+    const q = query(
+      collection(firestore, 'community_chats'),
+      where('participants', 'array-contains', currentUser.uid)
+    )
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      let count = 0
+      snapshot.docs.forEach((d) => {
+        const data = d.data()
+        const unread = Number(data[`unread_${currentUser.uid}`] || 0)
+        if (unread > 0) {
+          count += unread
+        }
+      })
+      setUnreadDmCount(count)
+    }, (err) => {
+      console.warn('[CommunityLayout] unread DMs listener error:', err)
+    })
+
+    return () => unsubscribe()
+  }, [currentUser?.uid])
+
   // Heartbeat to update lastActive in Firestore
   useEffect(() => {
     if (!currentUser?.uid) return
@@ -207,6 +238,11 @@ export default function CommunityLayout({ onBackToHome }) {
             >
               <span className="channel-icon">{ch.icon}</span>
               <span className="channel-name">{ch.name}</span>
+              {ch.id === 'dms' && unreadDmCount > 0 && (
+                <span className="channel-unread-badge" title={`${unreadDmCount} ข้อความใหม่ที่ยังไม่ได้อ่าน`}>
+                  {unreadDmCount > 99 ? '99+' : unreadDmCount}
+                </span>
+              )}
             </button>
           ))}
 
@@ -291,6 +327,11 @@ export default function CommunityLayout({ onBackToHome }) {
             onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
           >
             ☰
+            {unreadDmCount > 0 && (
+              <span className="mobile-unread-badge" title={`${unreadDmCount} ข้อความใหม่`}>
+                {unreadDmCount > 9 ? '9+' : unreadDmCount}
+              </span>
+            )}
           </button>
           <span className="mobile-active-channel-title">
             {activeChannel === 'general' && '💬 # แชททั่วไป'}

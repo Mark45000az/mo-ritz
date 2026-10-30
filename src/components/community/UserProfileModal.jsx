@@ -347,16 +347,22 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                     </span>
                   )}
 
-                  {/* Hearts Counter Pill (Clickable to view likers list) */}
-                  <button
-                    type="button"
-                    className="profile-hearts-badge clickable"
-                    onClick={() => setShowLikersModal(true)}
-                    title="คลิกเพื่อดูรายชื่อคนที่ให้หัวใจโปรไฟล์นี้"
-                  >
-                    <span>❤️ {heartCount} คนให้หัวใจ</span>
-                    <span className="profile-hearts-view-hint">👁️ ดูรายชื่อ</span>
-                  </button>
+                  {/* Hearts Counter Pill (Only owner can click to view likers list) */}
+                  {isOwnProfile ? (
+                    <button
+                      type="button"
+                      className="profile-hearts-badge clickable"
+                      onClick={() => setShowLikersModal(true)}
+                      title="คลิกเพื่อดูรายชื่อคนที่ให้หัวใจโปรไฟล์คุณ"
+                    >
+                      <span>❤️ {heartCount} คนให้หัวใจ</span>
+                      <span className="profile-hearts-view-hint">👁️ ดูรายชื่อ</span>
+                    </button>
+                  ) : (
+                    <div className="profile-hearts-badge" title={`มีคนให้หัวใจโปรไฟล์นี้ ${heartCount} คน`}>
+                      <span>❤️ {heartCount} คนให้หัวใจ</span>
+                    </div>
+                  )}
                 </div>
 
                 {liveUser?.email && isOwnProfile && (
@@ -544,18 +550,20 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
         </div>
       </div>
 
-      {/* Profile Likers Modal */}
-      <LikersModal
-        isOpen={showLikersModal}
-        likes={hearts}
-        title={`คนที่ให้หัวใจ ${liveUser?.displayName || 'โปรไฟล์นี้'} (${heartCount} คน)`}
-        usersMap={usersMap}
-        onClose={() => setShowLikersModal(false)}
-        onSelectUser={(u) => {
-          setShowLikersModal(false)
-          setLiveUser(u)
-        }}
-      />
+      {/* Profile Likers Modal (Owner only) */}
+      {isOwnProfile && (
+        <LikersModal
+          isOpen={showLikersModal}
+          likes={hearts}
+          title={`คนที่ให้หัวใจโปรไฟล์ของคุณ (${heartCount} คน)`}
+          usersMap={usersMap}
+          onClose={() => setShowLikersModal(false)}
+          onSelectUser={(u) => {
+            setShowLikersModal(false)
+            setLiveUser(u)
+          }}
+        />
+      )}
     </div>
   )
 }

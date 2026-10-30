@@ -12,7 +12,8 @@ import {
   deleteDoc,
   arrayUnion,
   arrayRemove,
-  serverTimestamp
+  serverTimestamp,
+  increment
 } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
@@ -48,8 +49,9 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
   // Delete / Unsend modal state
   const [deleteModalMsg, setDeleteModalMsg] = useState(null)
 
-  // Lightbox for image preview
+  // Lightbox for image preview & video full screen
   const [lightboxImage, setLightboxImage] = useState(null)
+  const [lightboxVideo, setLightboxVideo] = useState(null)
 
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
@@ -127,6 +129,15 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
     return () => unsubscribe()
   }, [currentUser, selectedPartner])
 
+  // Clear unread badge for current user when viewing this chat
+  useEffect(() => {
+    if (!currentUser?.uid || !selectedPartner?.uid) return
+    const chatId = getChatId(currentUser.uid, selectedPartner.uid)
+    updateDoc(doc(firestore, 'community_chats', chatId), {
+      [`unread_${currentUser.uid}`]: 0,
+    }).catch(() => {})
+  }, [currentUser?.uid, selectedPartner?.uid, messages.length])
+
   // Auto-scroll
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -203,6 +214,7 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
         },
         lastMessage: lastSnippet,
         lastUpdatedAt: serverTimestamp(),
+        [`unread_${selectedPartner.uid}`]: increment(1),
       }, { merge: true })
 
       await addDoc(collection(firestore, 'community_chats', chatId, 'messages'), {
@@ -401,12 +413,21 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                     ? rawOtherPhoto
                     : (isOtherAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
               const isSelected = selectedPartner?.uid === otherUid
+              const unreadCount = Number(chat[`unread_${currentUser.uid}`] || 0)
+              const showUnread = unreadCount > 0 && !isSelected
 
               return (
                 <div
                   key={chat.id}
-                  className={`dm-conv-item ${isSelected ? 'active' : ''}`}
-                  onClick={() => setSelectedPartner({ uid: otherUid, ...otherUser })}
+                  className={`dm-conv-item ${isSelected ? 'active' : ''} ${showUnread ? 'has-unread' : ''}`}
+                  onClick={() => {
+                    setSelectedPartner({ uid: otherUid, ...otherUser })
+                    if (unreadCount > 0) {
+                      updateDoc(doc(firestore, 'community_chats', chat.id), {
+                        [`unread_${currentUser.uid}`]: 0,
+                      }).catch(() => {})
+                    }
+                  }}
                 >
                   <img
                     src={otherAvatar}
@@ -414,8 +435,17 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                     className="dm-conv-avatar"
                   />
                   <div className="dm-conv-info">
-                    <span className="dm-conv-name">{otherUser.displayName}</span>
-                    <span className="dm-conv-last-msg">{chat.lastMessage || 'เริ่มการสนทนา'}</span>
+                    <div className="dm-conv-top-row">
+                      <span className="dm-conv-name">{otherUser.displayName}</span>
+                      {showUnread && (
+                        <span className="dm-conv-unread-badge" title={`${unreadCount} ข้อความใหม่`}>
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                    </div>
+                    <span className={`dm-conv-last-msg ${showUnread ? 'unread-highlight' : ''}`}>
+                      {chat.lastMessage || 'เริ่มการสนทนา'}
+                    </span>
                   </div>
                 </div>
               )
@@ -541,13 +571,21 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
 
                               {/* Attached Video */}
                               {msg.videoUrl && (
-                                <div className="dm-msg-media-box">
+                                <div className="dm-msg-media-box video-box">
                                   <video
                                     src={msg.videoUrl}
                                     controls
                                     playsInline
                                     className="dm-msg-media-video"
                                   />
+                                  <button
+                                    type="button"
+                                    className="dm-video-expand-btn"
+                                    onClick={() => setLightboxVideo(msg.videoUrl)}
+                                    title="ขยายดูวิดีโอแบบเต็มจอ"
+                                  >
+                                    ⛶ ขยายเต็มจอ
+                                  </button>
                                 </div>
                               )}
 
@@ -763,12 +801,28 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
         </div>
       )}
 
-      {/* Lightbox Modal */}
+      {/* Lightbox Modal (Image) */}
       {lightboxImage && (
         <div className="lightbox-overlay" onClick={() => setLightboxImage(null)}>
           <div className="lightbox-content">
             <img src={lightboxImage} alt="Enlarged" />
             <button className="lightbox-close" onClick={() => setLightboxImage(null)}>✕</button>
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox Modal (Video Full Screen) */}
+      {lightboxVideo && (
+        <div className="lightbox-overlay" onClick={() => setLightboxVideo(null)}>
+          <div className="lightbox-content video-lightbox-content" onClick={(e) => e.stopPropagation()}>
+            <video
+              src={lightboxVideo}
+              controls
+              autoPlay
+              playsInline
+              className="lightbox-main-video"
+            />
+            <button className="lightbox-close" onClick={() => setLightboxVideo(null)} title="ปิด (Esc)">✕</button>
           </div>
         </div>
       )}
