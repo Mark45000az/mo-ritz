@@ -285,7 +285,11 @@ export default function AdminPanel({ onSelectUser }) {
                 {pendingPosts.map((post) => (
                   <div key={post.id} className="admin-pending-card">
                     <div className="admin-pending-type-tag">
-                      {post.type === 'fanart' ? '🎨 แฟนอาร์ต' : '🎭 มีม'}
+                      {post.type === 'fanart'
+                        ? '🎨 แฟนอาร์ต'
+                        : post.type === 'meme'
+                        ? '🎭 มีม'
+                        : '✨ อวดอะไรก็ได้'}
                     </div>
 
                     {(() => {

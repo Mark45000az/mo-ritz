@@ -337,6 +337,7 @@ export default function CommunityLayout({ onBackToHome }) {
             {activeChannel === 'general' && '💬 # แชททั่วไป'}
             {activeChannel === 'fanart' && '🎨 # แฟนอาร์ต'}
             {activeChannel === 'meme' && '🎭 # มีมฮาๆ'}
+            {activeChannel === 'showoff' && '✨ # อวดอะไรก็ได้'}
             {activeChannel === 'dms' && '✉️ # ข้อความส่วนตัว'}
             {activeChannel === 'admin' && '👑 # จัดการหลังบ้าน (Big Boss)'}
           </span>
@@ -362,6 +363,7 @@ export default function CommunityLayout({ onBackToHome }) {
               {activeChannel === 'general' && '💬 แชททั่วไป'}
               {activeChannel === 'fanart' && '🎨 ห้องแฟนอาร์ต'}
               {activeChannel === 'meme' && '🎭 ห้องมีมฮาๆ'}
+              {activeChannel === 'showoff' && '✨ ห้องอวดอะไรก็ได้'}
               {activeChannel === 'dms' && '✉️ ข้อความส่วนตัว'}
               {activeChannel === 'admin' && '👑 จัดการหลังบ้าน (Big Boss)'}
             </span>
@@ -390,7 +392,7 @@ export default function CommunityLayout({ onBackToHome }) {
             />
           )}
 
-          {(activeChannel === 'fanart' || activeChannel === 'meme') && (
+          {(activeChannel === 'fanart' || activeChannel === 'meme' || activeChannel === 'showoff') && (
             <PostFeed
               key={activeChannel}
               type={activeChannel}
@@ -489,6 +491,7 @@ export default function CommunityLayout({ onBackToHome }) {
       />
 
       <CreatePostModal
+        key={createPostType || 'default'}
         isOpen={Boolean(createPostType)}
         defaultType={createPostType || 'fanart'}
         onClose={() => setCreatePostType(null)}

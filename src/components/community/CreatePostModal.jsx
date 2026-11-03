@@ -172,7 +172,11 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
 
         <div className="create-post-header">
           <h3 className="create-post-title">
-            {type === 'fanart' ? '🎨 ส่งแฟนอาร์ต (รูป/วิดีโอ)' : '🎭 ส่งมีม (รูป/วิดีโอ)'}
+            {type === 'fanart'
+              ? '🎨 ส่งแฟนอาร์ต (รูป/วิดีโอ)'
+              : type === 'meme'
+              ? '🎭 ส่งมีม (รูป/วิดีโอ)'
+              : '✨ โพสต์อวดอะไรก็ได้ (รูป/วิดีโอ)'}
           </h3>
           <p className="create-post-subtitle">
             {!isAdmin
@@ -206,6 +210,13 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
                 onClick={() => setType('meme')}
               >
                 🎭 มีม
+              </button>
+              <button
+                type="button"
+                className={`type-btn ${type === 'showoff' ? 'active' : ''}`}
+                onClick={() => setType('showoff')}
+              >
+                ✨ อวดอะไรก็ได้
               </button>
             </div>
 
@@ -357,7 +368,13 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
               <input
                 id="postTitle"
                 type="text"
-                placeholder="เช่น ภาพวาดมอริทส์ หรือ วิดีโอมีมสุดปั่น"
+                placeholder={
+                  type === 'fanart'
+                    ? 'เช่น ภาพวาดมอริทส์สุดเท่...'
+                    : type === 'meme'
+                    ? 'เช่น เมื่อเล่นเกมแล้วเจอเรื่องฮาๆ...'
+                    : 'เช่น ของสะสมชิ้นโปรด / ไอเทมที่เพิ่งได้มา / สัตว์เลี้ยงแสนรัก...'
+                }
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 maxLength={80}
@@ -370,7 +387,13 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
               <label htmlFor="postCaption">คำอธิบายเพิ่มเติม (ถ้ามี)</label>
               <textarea
                 id="postCaption"
-                placeholder="บอกเล่าเรื่องราวหรือที่มาของผลงานนี้..."
+                placeholder={
+                  type === 'fanart'
+                    ? 'บอกเล่าเกี่ยวกับภาพวาด เทคนิค หรือความประทับใจ...'
+                    : type === 'meme'
+                    ? 'คำบรรยายเพิ่มเติม หรือที่มาของความฮา...'
+                    : 'เล่าความประทับใจ ที่มา หรือความภูมิใจที่อยากอวด...'
+                }
                 value={caption}
                 onChange={(e) => setCaption(e.target.value)}
                 rows={3}
@@ -393,7 +416,13 @@ export default function CreatePostModal({ isOpen, onClose, defaultType = 'fanart
                 className="btn btn-primary btn-sm"
                 disabled={uploading || !hasMedia || !title.trim()}
               >
-                {uploading ? 'กำลังส่งผลงาน...' : 'ส่งผลงาน'}
+                {uploading
+                  ? 'กำลังส่งผลงาน...'
+                  : type === 'fanart'
+                  ? 'ส่งผลงานแฟนอาร์ต'
+                  : type === 'meme'
+                  ? 'โพสต์มีม'
+                  : 'โพสต์อวดของ'}
               </button>
             </div>
           </form>

@@ -278,12 +278,14 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
       <div className="post-feed-header">
         <div>
           <h2 className="post-feed-title">
-            {type === 'fanart' ? '🎨 ห้องแฟนอาร์ต' : '🎭 ห้องมีม'}
+            {type === 'fanart' && '🎨 ห้องแฟนอาร์ต'}
+            {type === 'meme' && '🎭 ห้องมีม'}
+            {type === 'showoff' && '✨ ห้องอวดอะไรก็ได้'}
           </h2>
           <p className="post-feed-subtitle">
-            {type === 'fanart'
-              ? 'พื้นที่รวมผลงานภาพวาดและแฟนอาร์ต'
-              : 'พื้นที่แชร์มีมทั่วไป'}
+            {type === 'fanart' && 'พื้นที่รวมผลงานภาพวาดและแฟนอาร์ต'}
+            {type === 'meme' && 'พื้นที่แชร์มีมฮาๆ คลายเครียด'}
+            {type === 'showoff' && 'พื้นที่อวดของสะสม ไอเทม สัตว์เลี้ยง ผลงาน หรืออะไรก็ได้ที่อยากแชร์'}
           </p>
         </div>
 
@@ -294,7 +296,7 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
             else onOpenCreate(type)
           }}
         >
-          {type === 'fanart' ? 'ส่งแฟนอาร์ต' : 'โพสต์มีม'}
+          {type === 'fanart' ? 'ส่งแฟนอาร์ต' : type === 'meme' ? 'โพสต์มีม' : 'โพสต์อวดของ'}
         </button>
       </div>
 
@@ -310,9 +312,19 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
       <div className="posts-list">
         {posts.length === 0 ? (
           <div className="empty-posts-state">
-            <div className="empty-icon">{type === 'fanart' ? '🎨' : '🎭'}</div>
-            <h3>ยังไม่มีโพสต์ในห้องนี้</h3>
-            <p>สามารถส่งผลงานได้ที่ปุ่มด้านบน</p>
+            <div className="empty-icon">
+              {type === 'fanart' ? '🎨' : type === 'meme' ? '🎭' : '✨'}
+            </div>
+            <h3>
+              {type === 'fanart' && 'ยังไม่มีแฟนอาร์ตในขณะนี้'}
+              {type === 'meme' && 'ยังไม่มีมีมในขณะนี้'}
+              {type === 'showoff' && 'ยังไม่มีใครอวดอะไรเลย'}
+            </h3>
+            <p>
+              {type === 'fanart' && 'ร่วมแชร์ผลงานแฟนอาร์ตฝีมือคุณเป็นคนแรก!'}
+              {type === 'meme' && 'แชร์มีมฮาๆ คลายเครียดให้เพื่อนๆ ได้ชมกัน!'}
+              {type === 'showoff' && 'มีอะไรเด็ดๆ สวยๆ หรือเรื่องราวเจ๋งๆ มาโพสต์อวดเป็นคนแรกกันเลย!'}
+            </p>
           </div>
         ) : (
           posts.map((post) => {
