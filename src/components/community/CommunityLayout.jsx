@@ -8,6 +8,7 @@ import GeneralChat from './GeneralChat'
 import PostFeed from './PostFeed'
 import DirectMessages from './DirectMessages'
 import AdminPanel from './AdminPanel'
+import AnnouncementFeed from './AnnouncementFeed'
 import AuthModal from './AuthModal'
 import UserProfileModal from './UserProfileModal'
 import CreatePostModal from './CreatePostModal'
@@ -235,6 +236,7 @@ export default function CommunityLayout({ onBackToHome }) {
               key={ch.id}
               className={`channel-btn ${activeChannel === ch.id ? 'active' : ''}`}
               onClick={() => handleSelectChannel(ch.id)}
+              title={ch.description || ch.name}
             >
               <span className="channel-icon">{ch.icon}</span>
               <span className="channel-name">{ch.name}</span>
@@ -334,6 +336,7 @@ export default function CommunityLayout({ onBackToHome }) {
             )}
           </button>
           <span className="mobile-active-channel-title">
+            {activeChannel === 'announcements' && '📢 # ประกาศจาก Moritz'}
             {activeChannel === 'general' && '💬 # แชททั่วไป'}
             {activeChannel === 'fanart' && '🎨 # แฟนอาร์ต'}
             {activeChannel === 'meme' && '🎭 # มีมฮาๆ'}
@@ -360,6 +363,7 @@ export default function CommunityLayout({ onBackToHome }) {
         <div className="community-desktop-bar">
           <div className="desktop-channel-info">
             <span className="desktop-channel-name">
+              {activeChannel === 'announcements' && '📢 ประกาศจาก Moritz'}
               {activeChannel === 'general' && '💬 แชททั่วไป'}
               {activeChannel === 'fanart' && '🎨 ห้องแฟนอาร์ต'}
               {activeChannel === 'meme' && '🎭 ห้องมีมฮาๆ'}
@@ -385,6 +389,13 @@ export default function CommunityLayout({ onBackToHome }) {
 
         {/* Channel Router */}
         <div className="channel-view-viewport">
+          {activeChannel === 'announcements' && (
+            <AnnouncementFeed
+              onSelectUser={(u) => setProfileModalUser(u)}
+              onOpenAuth={() => setAuthModalOpen(true)}
+            />
+          )}
+
           {activeChannel === 'general' && (
             <GeneralChat
               onOpenAuth={() => setAuthModalOpen(true)}

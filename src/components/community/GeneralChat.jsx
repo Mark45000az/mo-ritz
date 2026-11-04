@@ -14,6 +14,7 @@ import {
 } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
+import { checkRateLimit, isDuplicateMessage, isSpamText, containsBadWord, sanitizeText } from '../../lib/contentFilter'
 import ConfirmModal from './ConfirmModal'
 import Toast from './Toast'
 import '../../styles/GeneralChat.css'
@@ -165,12 +166,38 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  // Send message
+  // Send message (with rate limiting + spam/bad-word guard)
   const handleSend = async (e) => {
     e.preventDefault()
     if (!currentUser || isBanned || !inputText.trim() || sending) return
 
-    const text = inputText.trim()
+    const text = sanitizeText(inputText)
+    if (!text) return
+
+    // Rate limit: แชททั่วไป ≥ 1.5 วินาที
+    if (!isAdmin) {
+      const rl = checkRateLimit(`generalChat_${currentUser.uid}`, 1500)
+      if (!rl.allowed) {
+        setToast({ show: true, message: `กรุณารอ ${rl.remainingSec} วินาทีก่อนส่งข้อความถัดไป`, type: 'info' })
+        return
+      }
+      // ป้องกันข้อความซ้ำ
+      if (isDuplicateMessage(`generalChat_${currentUser.uid}`, text)) {
+        setToast({ show: true, message: 'กรุณาอย่าส่งข้อความซ้ำกัน', type: 'info' })
+        return
+      }
+      // ตรวจสอบ spam pattern
+      if (isSpamText(text)) {
+        setToast({ show: true, message: 'ข้อความนี้ถูกตรวจพบว่าอาจเป็น spam', type: 'error' })
+        return
+      }
+      // ตรวจสอบคำหยาบ
+      if (containsBadWord(text)) {
+        setToast({ show: true, message: 'ข้อความมีคำที่ไม่เหมาะสม กรุณาแก้ไขก่อนส่ง', type: 'error' })
+        return
+      }
+    }
+
     setInputText('')
     setSending(false)
 

@@ -4,6 +4,7 @@ import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { compressImage } from '../../lib/imageUpload'
 import { getUserStatusText, isUserOnline } from '../../lib/presence'
+import { isReservedName } from '../../lib/contentFilter'
 import LikersModal from './LikersModal'
 import '../../styles/UserProfileModal.css'
 
@@ -41,7 +42,7 @@ const HOBBY_TAGS = [
 ]
 
 export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
-  const { currentUser, userProfile, updateUserProfile } = useAuth()
+  const { currentUser, userProfile, updateUserProfile, isAdmin } = useAuth()
   const [liveUser, setLiveUser] = useState(user)
   const [editing, setEditing] = useState(false)
   const [displayName, setDisplayName] = useState(userProfile?.displayName || '')
@@ -179,6 +180,13 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
     e.preventDefault()
     if (!displayName.trim()) {
       setError('ชื่อไม่สามารถเว้นว่างได้')
+      return
+    }
+
+    // ป้องกันการแอบอ้างเป็น admin (ยกเว้นตัว admin เอง)
+    const targetIsAdmin = liveUser?.role === 'admin' || liveUser?.email === 'moritz2541@gmail.com'
+    if (!targetIsAdmin && !isAdmin && isReservedName(displayName.trim())) {
+      setError('ชื่อนี้ไม่สามารถใช้ได้ เนื่องจากเป็นชื่อสงวนของระบบหรือ admin')
       return
     }
     setSaving(true)

@@ -15,6 +15,7 @@ import {
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { compressImage } from '../../lib/imageUpload'
+import { checkRateLimit, isDuplicateMessage, isSpamText, containsBadWord, sanitizeText } from '../../lib/contentFilter'
 import ConfirmModal from './ConfirmModal'
 import LikersModal from './LikersModal'
 import Toast from './Toast'
@@ -23,6 +24,7 @@ import '../../styles/PostFeed.css'
 export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser, onOpenReport }) {
   const { currentUser, isAdmin, isBanned } = useAuth()
   const [posts, setPosts] = useState([])
+  const [postsLoading, setPostsLoading] = useState(true)
   const [usersMap, setUsersMap] = useState({})
   const [myPendingCount, setMyPendingCount] = useState(0)
   const [lightboxGallery, setLightboxGallery] = useState(null) // { images: [], activeIndex: 0 }
@@ -53,6 +55,7 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
 
   // Real-time listener for approved posts of this type (in-memory sort avoids composite index requirement)
   useEffect(() => {
+    setPostsLoading(true)
     const q = query(
       collection(firestore, 'community_posts'),
       where('type', '==', type),
@@ -70,9 +73,11 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
         return timeB - timeA
       })
       setPosts(docs)
+      setPostsLoading(false)
     }, (err) => {
       console.error('Error fetching posts:', err)
       setToast({ show: true, message: 'โหลดผลงานไม่สำเร็จ: ' + err.message, type: 'error' })
+      setPostsLoading(false)
     })
 
     return () => unsubscribe()
@@ -310,7 +315,23 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
 
       {/* Posts List */}
       <div className="posts-list">
-        {posts.length === 0 ? (
+        {postsLoading ? (
+          // Skeleton loading state
+          [0, 1, 2].map((i) => (
+            <div key={i} className="post-skeleton">
+              <div className="skeleton-header">
+                <div className="skeleton-line skeleton-avatar" />
+                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <div className="skeleton-line skeleton-title" />
+                  <div className="skeleton-line skeleton-sub" />
+                </div>
+              </div>
+              <div className="skeleton-line skeleton-image" />
+              <div className="skeleton-line skeleton-text" />
+              <div className="skeleton-line skeleton-text short" />
+            </div>
+          ))
+        ) : posts.length === 0 ? (
           <div className="empty-posts-state">
             <div className="empty-icon">
               {type === 'fanart' ? '🎨' : type === 'meme' ? '🎭' : '✨'}
@@ -784,8 +805,30 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
     if (!currentUser || isBanned) return
     if (!commentText.trim() && !commentImage) return
 
+    const text = sanitizeText(commentText)
+
+    // Rate limit: comment ≥ 2 วินาที
+    if (!isAdmin) {
+      const rl = checkRateLimit(`comment_${currentUser.uid}_${postId}`, 2000)
+      if (!rl.allowed) {
+        onToast?.(`กรุณารอ ${rl.remainingSec} วินาทีก่อนส่งความคิดเห็นถัดไป`, 'info')
+        return
+      }
+      if (text && isDuplicateMessage(`comment_${currentUser.uid}_${postId}`, text)) {
+        onToast?.('กรุณาอย่าส่งความคิดเห็นซ้ำกัน', 'info')
+        return
+      }
+      if (text && isSpamText(text)) {
+        onToast?.('ข้อความนี้ถูกตรวจพบว่าอาจเป็น spam', 'error')
+        return
+      }
+      if (text && containsBadWord(text)) {
+        onToast?.('ความคิดเห็นมีคำที่ไม่เหมาะสม กรุณาแก้ไขก่อนส่ง', 'error')
+        return
+      }
+    }
+
     setSending(true)
-    const text = commentText.trim()
     const img = commentImage
     const currentReplyTo = replyingToComment
 

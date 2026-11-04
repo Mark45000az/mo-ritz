@@ -3,6 +3,7 @@ import { addDoc, collection, serverTimestamp } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { REPORT_REASONS } from '../../config/communityConfig'
+import { checkRateLimit } from '../../lib/contentFilter'
 import '../../styles/ReportModal.css'
 
 export default function ReportModal({ isOpen, onClose, target }) {
@@ -18,6 +19,14 @@ export default function ReportModal({ isOpen, onClose, target }) {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!currentUser) return
+
+    // Rate limit: รายงาน ≥ 30 วินาที ต่อ 1 ครั้ง
+    const rl = checkRateLimit(`report_${currentUser.uid}`, 30000)
+    if (!rl.allowed) {
+      setError(`กรุณารอ ${rl.remainingSec} วินาทีก่อนส่งรายงานถัดไป`)
+      return
+    }
+
     setSubmitting(true)
     setError('')
 

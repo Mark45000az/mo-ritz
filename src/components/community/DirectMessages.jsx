@@ -19,6 +19,7 @@ import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
 import { compressImage } from '../../lib/imageUpload'
 import { getUserStatusText } from '../../lib/presence'
+import { checkRateLimit, isDuplicateMessage, isSpamText, containsBadWord, sanitizeText } from '../../lib/contentFilter'
 import ConfirmModal from './ConfirmModal'
 import Toast from './Toast'
 import '../../styles/DirectMessages.css'
@@ -177,13 +178,37 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
     }
   }
 
-  // Send Message (Text and/or Media)
+  // Send Message (Text and/or Media) with rate limiting + spam guard
   const handleSendMessage = async (e) => {
     e.preventDefault()
     if (!currentUser || !selectedPartner || isBanned || isBlocked || sending) return
     if (!inputText.trim() && !mediaPreview) return
 
-    const text = inputText.trim()
+    const text = sanitizeText(inputText)
+
+    // Rate limit: DM ≥ 1 วินาที (ยกเว้น admin)
+    if (!isBanned) {
+      const rl = checkRateLimit(`dm_${currentUser.uid}`, 1000)
+      if (!rl.allowed) {
+        setToast({ show: true, message: `กรุณารอ ${rl.remainingSec} วินาทีก่อนส่งข้อความถัดไป`, type: 'info' })
+        return
+      }
+    }
+    if (text) {
+      if (isDuplicateMessage(`dm_${currentUser.uid}`, text)) {
+        setToast({ show: true, message: 'กรุณาอย่าส่งข้อความซ้ำกัน', type: 'info' })
+        return
+      }
+      if (isSpamText(text)) {
+        setToast({ show: true, message: 'ข้อความนี้ถูกตรวจพบว่าอาจเป็น spam', type: 'error' })
+        return
+      }
+      if (containsBadWord(text)) {
+        setToast({ show: true, message: 'ข้อความมีคำที่ไม่เหมาะสม กรุณาแก้ไขก่อนส่ง', type: 'error' })
+        return
+      }
+    }
+
     const currentMedia = mediaPreview
     const currentMediaType = mediaType
     const currentReplyTo = replyingTo

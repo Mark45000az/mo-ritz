@@ -127,19 +127,21 @@
   font-weight: var(--weight-medium);
   cursor: pointer;
   text-align: left;
-  transition: all var(--transition-fast);
+  transition: all var(--transition-fast), transform 0.15s ease;
   position: relative;
 }
 
 .channel-btn:hover {
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(139, 92, 246, 0.08);
   color: var(--color-text-primary);
+  transform: translateX(3px);
 }
 
 .channel-btn.active {
-  background: rgba(139, 92, 246, 0.15);
+  background: rgba(139, 92, 246, 0.18);
   color: #fff;
   font-weight: var(--weight-semibold);
+  box-shadow: inset 3px 0 0 #8b5cf6;
 }
 
 .channel-icon {

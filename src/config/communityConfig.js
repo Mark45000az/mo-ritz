@@ -3,6 +3,7 @@ export const ADMIN_EMAILS = [
 ]
 
 export const CHANNELS = [
+  { id: 'announcements', name: 'ประกาศจาก Moritz', icon: '📢', description: 'ข่าวสาร ประกาศ และอัปเดตจาก Moritz — อ่านได้ทุกคน' },
   { id: 'general', name: 'แชททั่วไป', icon: '💬', description: 'ห้องพูดคุยแลกเปลี่ยนเรื่องราว' },
   { id: 'fanart', name: 'แฟนอาร์ต', icon: '🎨', description: 'ห้องแสดงผลงานแฟนอาร์ต' },
   { id: 'meme', name: 'มีม', icon: '🎭', description: 'ห้องแชร์มีม' },
