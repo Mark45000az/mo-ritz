@@ -161,19 +161,28 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
   }
 
   // Cover image / GIF upload handler
-  const handleCoverUpload = (e) => {
+  const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setError('')
-    if (file.size > 3 * 1024 * 1024) {
-      setError('ขนาดรูปหรือ GIF พื้นหลังต้องไม่เกิน 3MB')
-      return
+    try {
+      if (file.type === 'image/gif') {
+        if (file.size > 2 * 1024 * 1024) {
+          setError('ขนาดไฟล์ GIF พื้นหลังต้องไม่เกิน 2MB')
+          return
+        }
+        const reader = new FileReader()
+        reader.onload = () => {
+          setCoverImage(reader.result)
+        }
+        reader.readAsDataURL(file)
+      } else {
+        const compressed = await compressImage(file, { maxWidth: 960, maxHeight: 450, quality: 0.82 })
+        setCoverImage(compressed)
+      }
+    } catch (err) {
+      setError('อัปโหลดรูปพื้นหลังไม่สำเร็จ: ' + err.message)
     }
-    const reader = new FileReader()
-    reader.onload = () => {
-      setCoverImage(reader.result)
-    }
-    reader.readAsDataURL(file)
   }
 
   const handleSave = async (e) => {
@@ -239,12 +248,13 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
     }
   }
 
-  // Cover style computation
-  const activeCoverBg = isOwnProfile && editing
-    ? (coverImage ? `url(${coverImage}) center/cover no-repeat` : coverGradient)
-    : (liveUser?.coverImage
-        ? `url(${liveUser.coverImage}) center/cover no-repeat`
-        : (liveUser?.coverGradient || coverGradient || COVER_PRESETS[0].gradient))
+  // Cover computation (supports live animated GIF)
+  const currentCoverImage = isOwnProfile && editing
+    ? coverImage
+    : (liveUser?.coverImage || null)
+  const currentCoverGradient = isOwnProfile && editing
+    ? coverGradient
+    : (liveUser?.coverGradient || coverGradient || COVER_PRESETS[0].gradient)
 
   // Real-time Presence Computation
   const statusDisplay = getUserStatusText(liveUser)
@@ -261,11 +271,18 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
           ✕
         </button>
 
-        {/* Customizable Cover Banner */}
+        {/* Customizable Cover Banner (Uses <img> for guaranteed animated GIF playback) */}
         <div
           className="profile-modal-cover"
-          style={{ background: activeCoverBg }}
+          style={{ background: !currentCoverImage ? currentCoverGradient : '#0a0a10' }}
         >
+          {currentCoverImage && (
+            <img
+              src={currentCoverImage}
+              alt="Profile Cover"
+              className="profile-modal-cover-img"
+            />
+          )}
           {isOwnProfile && editing && (
             <div className="cover-edit-actions">
               <label className="cover-upload-btn" title="อัปโหลดรูปภาพหรือ GIF พื้นหลัง">

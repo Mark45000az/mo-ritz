@@ -34,6 +34,7 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
   const [editingPost, setEditingPost] = useState(null)
   const [editPostTitle, setEditPostTitle] = useState('')
   const [editPostCaption, setEditPostCaption] = useState('')
+  const [editPostType, setEditPostType] = useState('fanart')
   const [isSavingPost, setIsSavingPost] = useState(false)
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' })
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, title: '', message: '', onConfirm: null })
@@ -242,21 +243,34 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
     setEditingPost(post)
     setEditPostTitle(post.title || '')
     setEditPostCaption(post.caption || '')
+    setEditPostType(post.type || type)
   }
 
   const handleSavePostEdit = async (e) => {
     e.preventDefault()
     if (!editingPost || !editPostTitle.trim() || isSavingPost) return
     setIsSavingPost(true)
+    const targetType = editPostType || editingPost.type || type
+    const typeChanged = targetType !== editingPost.type
     try {
       const postRef = doc(firestore, 'community_posts', editingPost.id)
       await updateDoc(postRef, {
         title: editPostTitle.trim(),
         caption: editPostCaption.trim(),
+        type: targetType,
         isEdited: true,
         editedAt: serverTimestamp(),
       })
-      setToast({ show: true, message: 'แก้ไขข้อความโพสต์เรียบร้อยแล้ว ✓', type: 'success' })
+      if (typeChanged) {
+        const roomNames = {
+          fanart: '🎨 ห้องแฟนอาร์ต',
+          meme: '🎭 ห้องมีม',
+          showoff: '✨ ห้องอวดอะไรก็ได้'
+        }
+        setToast({ show: true, message: `ย้ายผลงานไปยัง ${roomNames[targetType] || targetType} เรียบร้อยแล้ว ✓`, type: 'success' })
+      } else {
+        setToast({ show: true, message: 'แก้ไขข้อความโพสต์เรียบร้อยแล้ว ✓', type: 'success' })
+      }
       setEditingPost(null)
     } catch (err) {
       console.error('Error updating post:', err)
@@ -671,6 +685,28 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                   className="edit-post-textarea"
                   placeholder="เขียนแคปชั่น เล่าเรื่องราว หรือคำอธิบาย..."
                 />
+              </div>
+
+              {/* ย้ายห้อง / เปลี่ยนหมวดหมู่ (สำหรับ Admin หรือเจ้าของโพสต์) */}
+              <div className="edit-post-field">
+                <label className="edit-post-label">📍 ย้ายห้อง / หมวดหมู่ผลงาน (เลือกเพื่อย้ายห้อง):</label>
+                <div className="edit-post-type-selector">
+                  {[
+                    { id: 'fanart', name: '🎨 แฟนอาร์ต', desc: 'ห้องผลงานวาด' },
+                    { id: 'meme', name: '🎭 มีม', desc: 'ห้องมีมฮาๆ' },
+                    { id: 'showoff', name: '✨ อวดอะไรก็ได้', desc: 'ห้องอวดของ/ไอเทม' },
+                  ].map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      className={`edit-type-chip ${editPostType === cat.id ? 'active' : ''}`}
+                      onClick={() => setEditPostType(cat.id)}
+                    >
+                      <span className="edit-type-chip-name">{cat.name}</span>
+                      <span className="edit-type-chip-desc">{cat.desc}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
 
               <div className="edit-post-actions">

@@ -127,6 +127,16 @@ export default function AdminPanel({ onSelectUser }) {
   }, [isAdmin])
 
   // Actions for Pending Posts
+  const handleChangePendingType = async (postId, newType) => {
+    try {
+      await updateDoc(doc(firestore, 'community_posts', postId), { type: newType })
+      const roomNames = { fanart: '🎨 แฟนอาร์ต', meme: '🎭 มีม', showoff: '✨ อวดอะไรก็ได้' }
+      setToast({ show: true, message: `เปลี่ยนประเภทเป็น ${roomNames[newType] || newType} เรียบร้อยแล้ว ✓`, type: 'success' })
+    } catch (err) {
+      setToast({ show: true, message: 'เปลี่ยนหมวดหมู่ไม่สำเร็จ: ' + err.message, type: 'error' })
+    }
+  }
+
   const handleApprovePost = async (postId) => {
     setProcessingId(postId)
     try {
@@ -284,12 +294,18 @@ export default function AdminPanel({ onSelectUser }) {
               <div className="admin-pending-grid">
                 {pendingPosts.map((post) => (
                   <div key={post.id} className="admin-pending-card">
-                    <div className="admin-pending-type-tag">
-                      {post.type === 'fanart'
-                        ? '🎨 แฟนอาร์ต'
-                        : post.type === 'meme'
-                        ? '🎭 มีม'
-                        : '✨ อวดอะไรก็ได้'}
+                    <div className="admin-pending-type-row">
+                      <select
+                        className="admin-pending-type-select"
+                        value={post.type}
+                        onChange={(e) => handleChangePendingType(post.id, e.target.value)}
+                        title="คลิกเพื่อเปลี่ยนห้อง/หมวดหมู่หากส่งมาผิด"
+                      >
+                        <option value="fanart">🎨 แฟนอาร์ต</option>
+                        <option value="meme">🎭 มีม</option>
+                        <option value="showoff">✨ อวดอะไรก็ได้</option>
+                      </select>
+                      <span className="admin-pending-type-hint">✎ สลับห้องได้</span>
                     </div>
 
                     {(() => {

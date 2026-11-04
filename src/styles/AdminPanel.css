@@ -99,13 +99,36 @@
   flex-direction: column;
 }
 
-.admin-pending-type-tag {
+.admin-pending-type-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   padding: 6px 12px;
   background: var(--color-bg-tertiary);
-  font-size: var(--text-xs);
-  font-weight: var(--weight-semibold);
-  color: var(--color-accent-light);
   border-bottom: 1px solid var(--color-border);
+}
+
+.admin-pending-type-select {
+  background: rgba(139, 92, 246, 0.15);
+  border: 1px solid rgba(139, 92, 246, 0.35);
+  color: #c4b5fd;
+  border-radius: 8px;
+  padding: 4px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.admin-pending-type-select:hover {
+  background: rgba(139, 92, 246, 0.25);
+  border-color: #8b5cf6;
+}
+
+.admin-pending-type-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
 }
 
 /* Pending Posts Media (Single Image, Gallery Grid, Video) */

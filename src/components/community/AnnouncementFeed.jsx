@@ -20,10 +20,11 @@ import '../../styles/AnnouncementFeed.css'
 
 // Discord-style full emoji palette (grouped)
 const EMOJI_GROUPS = [
-  { label: 'ความรู้สึก', emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💯'] },
-  { label: 'ปฏิกิริยา', emojis: ['👍', '👎', '👏', '🙌', '🤝', '🙏', '💪', '🫡', '🤔'] },
-  { label: 'หน้าตา', emojis: ['😂', '🥹', '😮', '😢', '😡', '🥰', '😎', '🤩', '😴'] },
-  { label: 'สัญลักษณ์', emojis: ['🔥', '⚡', '🎉', '🎊', '✨', '💥', '🌟', '🚀', '📌'] },
+  { label: 'ความรู้สึก', icon: '❤️', emojis: ['❤️', '🧡', '💛', '💚', '💙', '💜', '🖤', '🤍', '💯'] },
+  { label: 'ปฏิกิริยา', icon: '👍', emojis: ['👍', '👎', '👏', '🙌', '🤝', '🙏', '💪', '🫡', '🤔'] },
+  { label: 'หน้าตา / ตลก', icon: '😂', emojis: ['😂', '🤣', '🥹', '😮', '🥰', '😎', '🤩', '🥳', '😴'] },
+  { label: 'เศร้า / ร้องไห้', icon: '😢', emojis: ['😢', '😭', '🥺', '💔', '🥀', '😿', '😞', '😥', '😔', '💧'] },
+  { label: 'สัญลักษณ์ / ไฮป์', icon: '🔥', emojis: ['🔥', '⚡', '🎉', '🎊', '✨', '💥', '🌟', '🚀', '📌'] },
 ]
 const ALL_EMOJIS = EMOJI_GROUPS.flatMap((g) => g.emojis)
 
@@ -37,6 +38,11 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
   const [composeText, setComposeText] = useState('')
   const [composeImagePreviews, setComposeImagePreviews] = useState([]) // array of base64
   const [composeSending, setComposeSending] = useState(false)
+
+  // Edit announcement state (admin only)
+  const [editingAnnId, setEditingAnnId] = useState(null)
+  const [editingAnnText, setEditingAnnText] = useState('')
+  const [editingAnnSending, setEditingAnnSending] = useState(false)
 
   // Lightbox
   const [lightbox, setLightbox] = useState(null) // { images: [], index: 0 }
@@ -140,6 +146,32 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
       setToast({ show: true, message: 'โพสต์ไม่สำเร็จ: ' + err.message, type: 'error' })
     } finally {
       setComposeSending(false)
+    }
+  }
+
+  // ── Edit announcement (admin only) ────────────────────────
+  const handleStartEdit = (ann) => {
+    setEditingAnnId(ann.id)
+    setEditingAnnText(ann.text || '')
+  }
+
+  const handleSaveEdit = async (e, id) => {
+    e.preventDefault()
+    if (!isAdmin || !editingAnnText.trim() || editingAnnSending) return
+    setEditingAnnSending(true)
+    try {
+      await updateDoc(doc(firestore, 'announcements', id), {
+        text: editingAnnText.trim(),
+        isEdited: true,
+        editedAt: serverTimestamp(),
+      })
+      setEditingAnnId(null)
+      setEditingAnnText('')
+      setToast({ show: true, message: 'แก้ไขประกาศเรียบร้อยแล้ว ✓', type: 'success' })
+    } catch (err) {
+      setToast({ show: true, message: 'แก้ไขไม่สำเร็จ: ' + err.message, type: 'error' })
+    } finally {
+      setEditingAnnSending(false)
     }
   }
 
@@ -258,7 +290,13 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
                 />
               </label>
               <div className="announce-compose-submit-row">
-                <button type="button" className="btn btn-secondary btn-sm" onClick={() => { setComposing(false); setComposeText(''); setComposeImagePreviews([]) }}>ยกเลิก</button>
+                <button
+                  type="button"
+                  className="announce-btn-cancel"
+                  onClick={() => { setComposing(false); setComposeText(''); setComposeImagePreviews([]) }}
+                >
+                  ยกเลิก
+                </button>
                 <button
                   type="submit"
                   className="btn btn-primary btn-sm"
@@ -320,23 +358,67 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
                       </span>
                       <span className="announce-admin-pill">👑 Big Boss</span>
                     </div>
-                    <span className="announce-timestamp">{formatTime(ann.createdAt)}</span>
+                    <span className="announce-timestamp">
+                      {formatTime(ann.createdAt)}
+                      {ann.isEdited && <span className="announce-edited-tag">(แก้ไขแล้ว)</span>}
+                    </span>
                   </div>
-                  {/* Admin delete button */}
+                  {/* Admin action buttons */}
                   {isAdmin && (
-                    <button
-                      className="announce-delete-btn"
-                      onClick={() => handleDelete(ann.id)}
-                      title="ลบประกาศ"
-                    >
-                      🗑️
-                    </button>
+                    <div className="announce-admin-actions">
+                      <button
+                        className="announce-action-btn edit"
+                        onClick={() => handleStartEdit(ann)}
+                        title="แก้ไขประกาศนี้"
+                      >
+                        ✏️
+                      </button>
+                      <button
+                        className="announce-action-btn delete"
+                        onClick={() => handleDelete(ann.id)}
+                        title="ลบประกาศนี้"
+                      >
+                        🗑️
+                      </button>
+                    </div>
                   )}
                 </div>
 
-                {/* Text */}
-                {ann.text && (
-                  <div className="announce-card-text">{ann.text}</div>
+                {/* Text or Inline Edit Form */}
+                {editingAnnId === ann.id ? (
+                  <div className="announce-inline-edit-box">
+                    <textarea
+                      className="announce-edit-textarea"
+                      value={editingAnnText}
+                      onChange={(e) => setEditingAnnText(e.target.value)}
+                      maxLength={2000}
+                      rows={4}
+                      placeholder="แก้ไขข้อความประกาศ..."
+                      autoFocus
+                    />
+                    <div className="announce-edit-actions">
+                      <button
+                        type="button"
+                        className="announce-btn-cancel"
+                        onClick={() => setEditingAnnId(null)}
+                        disabled={editingAnnSending}
+                      >
+                        ยกเลิก
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={(e) => handleSaveEdit(e, ann.id)}
+                        disabled={editingAnnSending || !editingAnnText.trim()}
+                      >
+                        {editingAnnSending ? 'กำลังบันทึก...' : '💾 บันทึกการแก้ไข'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  ann.text && (
+                    <div className="announce-card-text">{ann.text}</div>
+                  )
                 )}
 
                 {/* Images */}
@@ -387,6 +469,17 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
                       {/* Full emoji picker */}
                       {pickerPostId === ann.id && (
                         <div className="announce-emoji-picker">
+                          <div className="emoji-picker-header">
+                            <span className="emoji-picker-title">เลือกอิโมจิ</span>
+                            <button
+                              type="button"
+                              className="emoji-picker-close-btn"
+                              onClick={() => setPickerPostId(null)}
+                              aria-label="ปิด"
+                            >
+                              ✕
+                            </button>
+                          </div>
                           <div className="emoji-picker-tabs">
                             {EMOJI_GROUPS.map((g, ti) => (
                               <button
@@ -394,14 +487,15 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
                                 type="button"
                                 className={`emoji-tab-btn ${pickerTab === ti ? 'active' : ''}`}
                                 onClick={() => setPickerTab(ti)}
+                                title={g.label}
                               >
-                                {g.emojis[0]}
+                                {g.icon || g.emojis[0]}
                               </button>
                             ))}
                           </div>
-                          <div className="emoji-picker-label">{EMOJI_GROUPS[pickerTab].label}</div>
+                          <div className="emoji-picker-label">{EMOJI_GROUPS[pickerTab]?.label}</div>
                           <div className="emoji-picker-grid">
-                            {EMOJI_GROUPS[pickerTab].emojis.map((emoji) => {
+                            {EMOJI_GROUPS[pickerTab]?.emojis.map((emoji) => {
                               const mine = currentUser && (ann.reactions?.[emoji] || []).includes(currentUser.uid)
                               return (
                                 <button
@@ -410,21 +504,6 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
                                   className={`emoji-picker-cell ${mine ? 'active' : ''}`}
                                   onClick={() => handleReact(ann, emoji)}
                                   title={emoji}
-                                >
-                                  {emoji}
-                                </button>
-                              )
-                            })}
-                          </div>
-                          <div className="emoji-picker-quick-row">
-                            {ALL_EMOJIS.map((emoji) => {
-                              const mine = currentUser && (ann.reactions?.[emoji] || []).includes(currentUser.uid)
-                              return (
-                                <button
-                                  key={emoji}
-                                  type="button"
-                                  className={`emoji-quick-btn ${mine ? 'active' : ''}`}
-                                  onClick={() => handleReact(ann, emoji)}
                                 >
                                   {emoji}
                                 </button>
@@ -489,3 +568,4 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
     </div>
   )
 }
+

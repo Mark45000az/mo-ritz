@@ -848,6 +848,57 @@
   margin-top: 8px;
 }
 
+/* Type Selector in Edit Post Modal */
+.edit-post-type-selector {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.edit-type-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 10px 8px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.18s ease;
+  text-align: center;
+}
+
+.edit-type-chip:hover {
+  background: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.35);
+  transform: translateY(-1px);
+}
+
+.edit-type-chip.active {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: #8b5cf6;
+  box-shadow: 0 0 14px rgba(139, 92, 246, 0.35);
+}
+
+.edit-type-chip-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.edit-type-chip-desc {
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+@media (max-width: 600px) {
+  .edit-post-type-selector {
+    grid-template-columns: 1fr;
+  }
+}
+
 .edit-post-cancel-btn {
   padding: 9px 18px;
   border-radius: 10px;
