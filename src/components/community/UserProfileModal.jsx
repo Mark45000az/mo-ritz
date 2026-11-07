@@ -43,10 +43,20 @@ const HOBBY_TAGS = [
   '📚 หนอนหนังสือ',
 ]
 
+const EDIT_TABS = [
+  { id: 'nametag', label: 'เนมแท็ก', icon: '✨' },
+  { id: 'cover', label: 'พื้นหลัง', icon: '🖼️' },
+  { id: 'frame', label: 'กรอบรูป', icon: '👑' },
+  { id: 'bio', label: 'ข้อมูลตัวตน', icon: '👤' },
+  { id: 'status', label: 'สถานะ', icon: '🔒' },
+  { id: 'all', label: 'ทั้งหมด', icon: '📋' },
+]
+
 export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
   const { currentUser, userProfile, updateUserProfile, isAdmin } = useAuth()
   const [liveUser, setLiveUser] = useState(user)
   const [editing, setEditing] = useState(false)
+  const [editTab, setEditTab] = useState('nametag')
   const [displayName, setDisplayName] = useState(userProfile?.displayName || '')
   const [bio, setBio] = useState(userProfile?.bio || '')
   const [hobbyTag, setHobbyTag] = useState(userProfile?.hobbyTag || '')
@@ -469,6 +479,7 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                       setCoverImage(userProfile?.coverImage || null)
                       setCoverUrlInput(userProfile?.coverImage && (userProfile.coverImage.startsWith('http://') || userProfile.coverImage.startsWith('https://')) ? userProfile.coverImage : '')
                       setStatusMode(userProfile?.statusMode || 'online')
+                      setEditTab('nametag')
                       setEditing(true)
                     }}
                   >
@@ -505,270 +516,311 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
             </>
           ) : (
             <form onSubmit={handleSave} className="profile-edit-form">
-              {/* Display Name */}
-              <div className="profile-edit-field">
-                <label htmlFor="editDisplayName">ชื่อเล่นที่ต้องการแสดง</label>
-                <input
-                  id="editDisplayName"
-                  type="text"
-                  value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
-                  maxLength={30}
-                  required
-                />
+              {/* Function Category Mini Buttons */}
+              <div className="edit-function-tabs-bar" role="tablist">
+                {EDIT_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={editTab === tab.id}
+                    className={`edit-function-tab-btn ${editTab === tab.id ? 'active' : ''}`}
+                    onClick={() => setEditTab(tab.id)}
+                    title={`เปิดหมวดหมู่ ${tab.label}`}
+                  >
+                    <span>{tab.icon}</span>
+                    <span>{tab.label}</span>
+                  </button>
+                ))}
               </div>
 
-              {/* Nametag Customization */}
-              <div className="profile-edit-field">
-                <label>✨ ปรับแต่งเนมแท็ก (Nametag):</label>
-
-                {/* Live Preview Screen */}
-                <div className="nametag-live-preview-box">
-                  <div className="nametag-preview-header">
-                    <span>ตัวอย่างเนมแท็กของคุณ</span>
-                    <span>สไตล์: {NAMETAG_STYLES.find((s) => s.id === nametagStyle)?.name || 'ธรรมดา'}</span>
-                  </div>
-                  <div className="nametag-preview-screen">
-                    <img
-                      src={displayedAvatar}
-                      alt="Preview"
-                      className="nametag-preview-avatar"
+              {/* 1. Nametag Tab */}
+              {(editTab === 'nametag' || editTab === 'all') && (
+                <div className="edit-section-card">
+                  {/* Display Name */}
+                  <div className="profile-edit-field">
+                    <label htmlFor="editDisplayName">ชื่อเล่นที่ต้องการแสดง:</label>
+                    <input
+                      id="editDisplayName"
+                      type="text"
+                      value={displayName}
+                      onChange={(e) => setDisplayName(e.target.value)}
+                      maxLength={30}
+                      required
                     />
-                    <div className="nametag-preview-name-wrap">
-                      <UserNametag
-                        name={displayName.trim() || 'ชื่อของคุณ'}
-                        style={nametagStyle}
-                        badge={nametagBadge.trim()}
+                  </div>
+
+                  {/* Nametag Customization */}
+                  <div className="profile-edit-field">
+                    <label>✨ ปรับแต่งเนมแท็ก (Nametag):</label>
+
+                    {/* Live Preview Screen */}
+                    <div className="nametag-live-preview-box">
+                      <div className="nametag-preview-header">
+                        <span>ตัวอย่างเนมแท็กของคุณ</span>
+                        <span>สไตล์: {NAMETAG_STYLES.find((s) => s.id === nametagStyle)?.name || 'ธรรมดา'}</span>
+                      </div>
+                      <div className="nametag-preview-screen">
+                        <img
+                          src={displayedAvatar}
+                          alt="Preview"
+                          className="nametag-preview-avatar"
+                        />
+                        <div className="nametag-preview-name-wrap">
+                          <UserNametag
+                            name={displayName.trim() || 'ชื่อของคุณ'}
+                            style={nametagStyle}
+                            badge={nametagBadge.trim()}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* 1. Style Selection Grid */}
+                    <div style={{ marginBottom: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
+                      เลือกเอฟเฟกต์สไตล์เนมแท็ก (10 แบบ):
+                    </div>
+                    <div className="nametag-styles-grid">
+                      {NAMETAG_STYLES.map((st) => (
+                        <button
+                          key={st.id}
+                          type="button"
+                          className={`nametag-style-btn ${nametagStyle === st.id ? 'active' : ''}`}
+                          onClick={() => setNametagStyle(st.id)}
+                          title={st.desc}
+                        >
+                          <span className="nametag-style-btn-icon">{st.icon}</span>
+                          <span className="nametag-style-btn-name">{st.name}</span>
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* 2. Badge Presets */}
+                    <div style={{ marginBottom: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
+                      เลือกป้ายฉายาเนมแท็ก:
+                    </div>
+                    <div className="nametag-badges-presets-row">
+                      {PRESET_NAMETAG_BADGES.map((b) => (
+                        <button
+                          key={b}
+                          type="button"
+                          className={`nametag-badge-preset-btn ${nametagBadge === b ? 'active' : ''}`}
+                          onClick={() => setNametagBadge(nametagBadge === b ? '' : b)}
+                        >
+                          {b}
+                        </button>
+                      ))}
+                      {nametagBadge && (
+                        <button
+                          type="button"
+                          className="nametag-badge-clear-btn"
+                          onClick={() => setNametagBadge('')}
+                          title="ล้างป้ายฉายา"
+                        >
+                          ✕ ไม่ใส่ป้าย
+                        </button>
+                      )}
+                    </div>
+
+                    {/* 3. Custom Badge Input */}
+                    <div className="nametag-custom-badge-input-row">
+                      <input
+                        type="text"
+                        className="nametag-custom-badge-input"
+                        placeholder="🏷️ หรือพิมพ์ป้ายฉายาเอง (เช่น เทพสายฟ้า, มอนสเตอร์ตัวน้อย)..."
+                        value={nametagBadge}
+                        maxLength={24}
+                        onChange={(e) => setNametagBadge(e.target.value)}
                       />
+                      {nametagBadge && (
+                        <button
+                          type="button"
+                          className="nametag-custom-badge-clear"
+                          onClick={() => setNametagBadge('')}
+                          title="ลบข้อความ"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    <span className="profile-field-hint" style={{ marginTop: '4px' }}>
+                      💡 ป้ายฉายาจะแสดงเคียงข้างชื่อของคุณในแชท โพสต์ และแถบรายชื่อสมาชิก
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* 2. Cover Banner Tab */}
+              {(editTab === 'cover' || editTab === 'all') && (
+                <div className="edit-section-card">
+                  {/* Cover Gradient Presets */}
+                  <div className="profile-edit-field">
+                    <label>เลือกสีพื้นหลังโปรไฟล์ (10 โทนสี หรือกดปุ่มเปลี่ยนพื้นหลังด้านบน):</label>
+                    <div className="cover-presets-row">
+                      {COVER_PRESETS.map((p) => (
+                        <button
+                          key={p.id}
+                          type="button"
+                          className={`cover-preset-chip ${coverGradient === p.gradient && !coverImage ? 'active' : ''}`}
+                          style={{ background: p.gradient }}
+                          onClick={() => {
+                            setCoverGradient(p.gradient)
+                            setCoverImage(null)
+                            setCoverUrlInput('')
+                          }}
+                          title={p.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Cover Image / GIF via File or URL (No size limit!) */}
+                  <div className="profile-edit-field">
+                    <label>รูปภาพหรือ GIF พื้นหลัง:</label>
+                    <div className="cover-edit-inline-buttons">
+                      <label className="btn-cover-inline-upload" title="อัปโหลดรูปภาพหรือ GIF จากเครื่อง">
+                        {coverUploading ? '⏳ กำลังอัปโหลด...' : '📁 เลือกไฟล์ภาพ / GIF จากเครื่อง'}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handleCoverUpload}
+                          style={{ display: 'none' }}
+                          disabled={coverUploading}
+                        />
+                      </label>
+                      {coverImage && (
+                        <button
+                          type="button"
+                          className="btn-cover-inline-remove"
+                          onClick={() => {
+                            setCoverImage(null)
+                            setCoverUrlInput('')
+                          }}
+                        >
+                          ✕ ลบรูปพื้นหลัง
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="cover-url-input-row" style={{ marginTop: '8px' }}>
+                      <input
+                        id="coverUrlInput"
+                        type="url"
+                        placeholder="🔗 หรือวางลิงก์รูปภาพ / GIF จากเว็บ (https://...)"
+                        value={coverUrlInput}
+                        onChange={(e) => {
+                          const val = e.target.value
+                          setCoverUrlInput(val)
+                          if (val.trim()) {
+                            setCoverImage(val.trim())
+                          }
+                        }}
+                        className="cover-url-input"
+                      />
+                      {coverImage && (
+                        <button
+                          type="button"
+                          className="cover-url-clear-btn"
+                          onClick={() => {
+                            setCoverUrlInput('')
+                            setCoverImage(null)
+                          }}
+                          title="ลบรูปพื้นหลัง"
+                        >
+                          ✕
+                        </button>
+                      )}
+                    </div>
+                    <span className="profile-field-hint">
+                      💡 แนะนำ: สามารถคลิกขวาที่ภาพ GIF บนเว็บ แล้วเลือก "คัดลอกที่อยู่รูปภาพ" (Copy image address) มาวางได้ ไม่จำกัดขนาดไฟล์
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. Avatar Frame Tab */}
+              {(editTab === 'frame' || editTab === 'all') && (
+                <div className="edit-section-card">
+                  <div className="profile-edit-field">
+                    <label>กรอบรูปโปรไฟล์ & แสงออร่า (Avatar Frame):</label>
+                    <div className="avatar-frames-grid">
+                      {AVATAR_FRAMES.map((f) => (
+                        <button
+                          key={f.id}
+                          type="button"
+                          className={`avatar-frame-btn ${avatarFrame === f.id ? 'active' : ''}`}
+                          onClick={() => setAvatarFrame(f.id)}
+                        >
+                          <span>{f.icon}</span>
+                          <span>{f.label}</span>
+                        </button>
+                      ))}
                     </div>
                   </div>
                 </div>
+              )}
 
-                {/* 1. Style Selection Grid */}
-                <div style={{ marginBottom: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
-                  เลือกเอฟเฟกต์สไตล์เนมแท็ก (10 แบบ):
-                </div>
-                <div className="nametag-styles-grid">
-                  {NAMETAG_STYLES.map((st) => (
-                    <button
-                      key={st.id}
-                      type="button"
-                      className={`nametag-style-btn ${nametagStyle === st.id ? 'active' : ''}`}
-                      onClick={() => setNametagStyle(st.id)}
-                      title={st.desc}
-                    >
-                      <span className="nametag-style-btn-icon">{st.icon}</span>
-                      <span className="nametag-style-btn-name">{st.name}</span>
-                    </button>
-                  ))}
-                </div>
-
-                {/* 2. Badge Presets */}
-                <div style={{ marginBottom: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
-                  เลือกป้ายฉายาเนมแท็ก:
-                </div>
-                <div className="nametag-badges-presets-row">
-                  {PRESET_NAMETAG_BADGES.map((b) => (
-                    <button
-                      key={b}
-                      type="button"
-                      className={`nametag-badge-preset-btn ${nametagBadge === b ? 'active' : ''}`}
-                      onClick={() => setNametagBadge(nametagBadge === b ? '' : b)}
-                    >
-                      {b}
-                    </button>
-                  ))}
-                  {nametagBadge && (
-                    <button
-                      type="button"
-                      className="nametag-badge-clear-btn"
-                      onClick={() => setNametagBadge('')}
-                      title="ล้างป้ายฉายา"
-                    >
-                      ✕ ไม่ใส่ป้าย
-                    </button>
-                  )}
-                </div>
-
-                {/* 3. Custom Badge Input */}
-                <div className="nametag-custom-badge-input-row">
-                  <input
-                    type="text"
-                    className="nametag-custom-badge-input"
-                    placeholder="🏷️ หรือพิมพ์ป้ายฉายาเอง (เช่น เทพสายฟ้า, มอนสเตอร์ตัวน้อย)..."
-                    value={nametagBadge}
-                    maxLength={24}
-                    onChange={(e) => setNametagBadge(e.target.value)}
-                  />
-                  {nametagBadge && (
-                    <button
-                      type="button"
-                      className="nametag-custom-badge-clear"
-                      onClick={() => setNametagBadge('')}
-                      title="ลบข้อความ"
-                    >
-                      ✕
-                    </button>
-                  )}
-                </div>
-                <span className="profile-field-hint" style={{ marginTop: '4px' }}>
-                  💡 ป้ายฉายาจะแสดงเคียงข้างชื่อของคุณในแชท โพสต์ และแถบรายชื่อสมาชิก
-                </span>
-              </div>
-
-              {/* Bio / Status Message */}
-              <div className="profile-edit-field">
-                <label htmlFor="editBio">คำอธิบายตัวเอง / ข้อความประจำตัว (Bio):</label>
-                <input
-                  id="editBio"
-                  type="text"
-                  placeholder="เช่น สตรีมเมอร์สายฮา / ยินดีที่ได้รู้จักทุกคน ✨"
-                  value={bio}
-                  onChange={(e) => setBio(e.target.value)}
-                  maxLength={120}
-                />
-              </div>
-
-              {/* Avatar Frame / Aura */}
-              <div className="profile-edit-field">
-                <label>กรอบรูปโปรไฟล์ & แสงออร่า (Avatar Frame):</label>
-                <div className="avatar-frames-grid">
-                  {AVATAR_FRAMES.map((f) => (
-                    <button
-                      key={f.id}
-                      type="button"
-                      className={`avatar-frame-btn ${avatarFrame === f.id ? 'active' : ''}`}
-                      onClick={() => setAvatarFrame(f.id)}
-                    >
-                      <span>{f.icon}</span>
-                      <span>{f.label}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Hobby Tag */}
-              <div className="profile-edit-field">
-                <label>สิ่งที่ชอบ / สไตล์ของคุณ (Tag):</label>
-                <div className="hobby-tags-row">
-                  {HOBBY_TAGS.map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      className={`hobby-tag-btn ${hobbyTag === tag ? 'active' : ''}`}
-                      onClick={() => setHobbyTag(hobbyTag === tag ? '' : tag)}
-                    >
-                      {tag}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Cover Gradient Presets */}
-              <div className="profile-edit-field">
-                <label>เลือกสีพื้นหลังโปรไฟล์ (10 โทนสี หรือกดปุ่มเปลี่ยนพื้นหลังด้านบน):</label>
-                <div className="cover-presets-row">
-                  {COVER_PRESETS.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      className={`cover-preset-chip ${coverGradient === p.gradient && !coverImage ? 'active' : ''}`}
-                      style={{ background: p.gradient }}
-                      onClick={() => {
-                        setCoverGradient(p.gradient)
-                        setCoverImage(null)
-                        setCoverUrlInput('')
-                      }}
-                      title={p.name}
-                    />
-                  ))}
-                </div>
-              </div>
-
-              {/* Cover Image / GIF via File or URL (No size limit!) */}
-              <div className="profile-edit-field">
-                <label>รูปภาพหรือ GIF พื้นหลัง:</label>
-                <div className="cover-edit-inline-buttons">
-                  <label className="btn-cover-inline-upload" title="อัปโหลดรูปภาพหรือ GIF จากเครื่อง">
-                    {coverUploading ? '⏳ กำลังอัปโหลด...' : '📁 เลือกไฟล์ภาพ / GIF จากเครื่อง'}
+              {/* 4. Bio & Hobby Tag Tab */}
+              {(editTab === 'bio' || editTab === 'all') && (
+                <div className="edit-section-card">
+                  {/* Bio / Status Message */}
+                  <div className="profile-edit-field">
+                    <label htmlFor="editBio">คำอธิบายตัวเอง / ข้อความประจำตัว (Bio):</label>
                     <input
-                      type="file"
-                      accept="image/*"
-                      onChange={handleCoverUpload}
-                      style={{ display: 'none' }}
-                      disabled={coverUploading}
+                      id="editBio"
+                      type="text"
+                      placeholder="เช่น สตรีมเมอร์สายฮา / ยินดีที่ได้รู้จักทุกคน ✨"
+                      value={bio}
+                      onChange={(e) => setBio(e.target.value)}
+                      maxLength={120}
                     />
-                  </label>
-                  {coverImage && (
-                    <button
-                      type="button"
-                      className="btn-cover-inline-remove"
-                      onClick={() => {
-                        setCoverImage(null)
-                        setCoverUrlInput('')
-                      }}
-                    >
-                      ✕ ลบรูปพื้นหลัง
-                    </button>
-                  )}
-                </div>
+                  </div>
 
-                <div className="cover-url-input-row" style={{ marginTop: '8px' }}>
-                  <input
-                    id="coverUrlInput"
-                    type="url"
-                    placeholder="🔗 หรือวางลิงก์รูปภาพ / GIF จากเว็บ (https://...)"
-                    value={coverUrlInput}
-                    onChange={(e) => {
-                      const val = e.target.value
-                      setCoverUrlInput(val)
-                      if (val.trim()) {
-                        setCoverImage(val.trim())
-                      }
-                    }}
-                    className="cover-url-input"
-                  />
-                  {coverImage && (
-                    <button
-                      type="button"
-                      className="cover-url-clear-btn"
-                      onClick={() => {
-                        setCoverUrlInput('')
-                        setCoverImage(null)
-                      }}
-                      title="ลบรูปพื้นหลัง"
-                    >
-                      ✕
-                    </button>
-                  )}
+                  {/* Hobby Tag */}
+                  <div className="profile-edit-field">
+                    <label>สิ่งที่ชอบ / สไตล์ของคุณ (Tag):</label>
+                    <div className="hobby-tags-row">
+                      {HOBBY_TAGS.map((tag) => (
+                        <button
+                          key={tag}
+                          type="button"
+                          className={`hobby-tag-btn ${hobbyTag === tag ? 'active' : ''}`}
+                          onClick={() => setHobbyTag(hobbyTag === tag ? '' : tag)}
+                        >
+                          {tag}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
                 </div>
-                <span className="profile-field-hint">
-                  💡 แนะนำ: สามารถคลิกขวาที่ภาพ GIF บนเว็บ แล้วเลือก "คัดลอกที่อยู่รูปภาพ" (Copy image address) มาวางได้ ไม่จำกัดขนาดไฟล์
-                </span>
-              </div>
+              )}
 
-              {/* Online / Offline Status Toggle */}
-              <div className="profile-edit-field">
-                <label>สถานะการแสดงผล (ความเป็นส่วนตัว):</label>
-                <div className="status-mode-options">
-                  <button
-                    type="button"
-                    className={`status-mode-btn ${statusMode === 'online' ? 'active' : ''}`}
-                    onClick={() => setStatusMode('online')}
-                  >
-                    <span className="status-indicator-dot online" />
-                    <span>🟢 แสดงว่าออนไลน์</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`status-mode-btn ${statusMode === 'offline' ? 'active' : ''}`}
-                    onClick={() => setStatusMode('offline')}
-                  >
-                    <span className="status-indicator-dot offline" />
-                    <span>⚪ ซ่อนสถานะ (ออฟไลน์)</span>
-                  </button>
+              {/* 5. Online / Offline Status Tab */}
+              {(editTab === 'status' || editTab === 'all') && (
+                <div className="edit-section-card">
+                  <div className="profile-edit-field">
+                    <label>สถานะการแสดงผล (ความเป็นส่วนตัว):</label>
+                    <div className="status-mode-options">
+                      <button
+                        type="button"
+                        className={`status-mode-btn ${statusMode === 'online' ? 'active' : ''}`}
+                        onClick={() => setStatusMode('online')}
+                      >
+                        <span className="status-indicator-dot online" />
+                        <span>🟢 แสดงว่าออนไลน์</span>
+                      </button>
+                      <button
+                        type="button"
+                        className={`status-mode-btn ${statusMode === 'offline' ? 'active' : ''}`}
+                        onClick={() => setStatusMode('offline')}
+                      >
+                        <span className="status-indicator-dot offline" />
+                        <span>⚪ ซ่อนสถานะ (ออฟไลน์)</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className="profile-edit-buttons">
                 <button

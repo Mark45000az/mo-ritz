@@ -89,3 +89,4 @@ export const PRESET_NAMETAG_BADGES = [
   '🍜 สายกินแหลก',
   '🚀 ผู้ท่องอวกาศ',
 ]
+
