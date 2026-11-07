@@ -26,7 +26,6 @@ const EMOJI_GROUPS = [
   { label: 'เศร้า / ร้องไห้', icon: '😢', emojis: ['😢', '😭', '🥺', '💔', '🥀', '😿', '😞', '😥', '😔', '💧'] },
   { label: 'สัญลักษณ์ / ไฮป์', icon: '🔥', emojis: ['🔥', '⚡', '🎉', '🎊', '✨', '💥', '🌟', '🚀', '📌'] },
 ]
-const ALL_EMOJIS = EMOJI_GROUPS.flatMap((g) => g.emojis)
 
 export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
   const { currentUser, userProfile, isAdmin } = useAuth()

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { doc, updateDoc, arrayUnion, arrayRemove, onSnapshot, collection } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
-import { compressImage, uploadToStorage } from '../../lib/imageUpload'
+import { compressImage } from '../../lib/imageUpload'
 import { getUserStatusText, isUserOnline } from '../../lib/presence'
 import { isReservedName } from '../../lib/contentFilter'
 import LikersModal from './LikersModal'
@@ -142,8 +142,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
     setError('')
     try {
       if (file.type === 'image/gif') {
-        if (file.size > 2.5 * 1024 * 1024) {
-          setError('ขนาดไฟล์ GIF ต้องไม่เกิน 2.5MB')
+        if (file.size > 500 * 1024) {
+          setError(`ไฟล์ GIF สำหรับรูปโปรไฟล์มีขนาด ${(file.size / 1024).toFixed(0)}KB ซึ่งเกินขีดจำกัด 500KB แนะนำให้ใช้ไฟล์ GIF ขนาดไม่เกิน 500KB`)
           return
         }
         const reader = new FileReader()
@@ -159,38 +159,23 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
       }
     } catch (err) {
       setError('อัปโหลดรูปไม่สำเร็จ: ' + err.message)
+    } finally {
+      e.target.value = ''
     }
   }
 
-  // Cover image / GIF upload handler (with Firebase Storage auto-upload & size safety)
+  // Cover image / GIF upload handler (Instant client-side compression without hanging network upload)
   const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setError('')
     setCoverUploading(true)
     try {
-      // 1. ลองอัปโหลดขึ้น Firebase Storage ก่อน (ถ้าพร้อมใช้งาน)
-      if (currentUser?.uid) {
-        try {
-          const ext = file.name ? file.name.split('.').pop() : (file.type === 'image/gif' ? 'gif' : 'png')
-          const path = `covers/${currentUser.uid}_${Date.now()}.${ext}`
-          const downloadUrl = await uploadToStorage(file, path)
-          setCoverImage(downloadUrl)
-          setCoverUrlInput('')
-          setCoverUploading(false)
-          return
-        } catch (storageErr) {
-          console.warn('[handleCoverUpload] Storage upload fallback to local data URL:', storageErr.message)
-        }
-      }
-
-      // 2. ถ้า Storage ไม่ผ่าน (fallback) ให้เก็บเป็น Data URL
       if (file.type === 'image/gif') {
         // Firestore จำกัดขนาดเอกสารไว้ที่ 1MB (1,048,576 bytes)
-        // เมื่อแปลงเป็น Base64 จะเพิ่มขึ้น 1.33 เท่า ดังนั้นขนาดไฟล์ GIF ไม่ควรเกิน ~800KB
-        if (file.size > 800 * 1024) {
-          setError(`ไฟล์ GIF นี้มีขนาด ${(file.size / (1024 * 1024)).toFixed(1)}MB ซึ่งเกินขีดจำกัดความจุ 800KB ของฐานข้อมูล แนะนำให้ใช้ไฟล์ GIF ขนาดไม่เกิน 800KB หรือคัดลอกลิงก์ GIF จากเว็บมาวางในช่องด้านล่างแทน`)
-          setCoverUploading(false)
+        // เมื่อแปลงเป็น Base64 จะเพิ่มขึ้น ~1.33 เท่า ดังนั้นไฟล์ GIF ควรไม่เกิน 650KB เพื่อความปลอดภัย
+        if (file.size > 650 * 1024) {
+          setError(`ไฟล์ GIF นี้มีขนาด ${(file.size / (1024 * 1024)).toFixed(1)}MB ซึ่งเกินขีดจำกัดความจุ 650KB ของฐานข้อมูล แนะนำให้ใช้ไฟล์ GIF ขนาดไม่เกิน 650KB หรือคัดลอกลิงก์ URL รูป GIF มาวางในช่องด้านล่างแทน`)
           return
         }
         const reader = new FileReader()
@@ -199,16 +184,23 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
           setCoverUrlInput('')
           setCoverUploading(false)
         }
+        reader.onerror = () => {
+          setError('ไม่สามารถอ่านไฟล์ GIF ได้')
+          setCoverUploading(false)
+        }
         reader.readAsDataURL(file)
+        return
       } else {
+        // รูปภาพปกติ (JPG, PNG, WebP) บีบอัดในเครื่องทันที (< 0.1 วินาที) ขนาดเหลือ ~50-80KB
         const compressed = await compressImage(file, { maxWidth: 960, maxHeight: 450, quality: 0.82 })
         setCoverImage(compressed)
         setCoverUrlInput('')
-        setCoverUploading(false)
       }
     } catch (err) {
       setError('อัปโหลดรูปพื้นหลังไม่สำเร็จ: ' + err.message)
+    } finally {
       setCoverUploading(false)
+      if (e.target) e.target.value = ''
     }
   }
 
