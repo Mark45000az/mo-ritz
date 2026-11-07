@@ -180,7 +180,12 @@ export default function CommunityLayout({ onBackToHome }) {
         </div>
         <div className="member-details">
           <div className="member-name-row">
-            <span className="member-name">{u.displayName || 'สมาชิก'}</span>
+            <span className={`member-name nametag-style-${u.nametagStyle || 'default'}`}>{u.displayName || 'สมาชิก'}</span>
+            {u.nametagBadge && (
+              <span className={`member-nametag-badge nametag-style-${u.nametagStyle || 'default'}`}>
+                {u.nametagBadge}
+              </span>
+            )}
             {isUserAdmin && <span className="member-badge admin">👑 Big Boss</span>}
             {isVip && !isUserAdmin && <span className="member-badge vip">⭐</span>}
           </div>
@@ -287,7 +292,14 @@ export default function CommunityLayout({ onBackToHome }) {
                 onClick={() => setProfileModalUser(userProfile || { uid: currentUser.uid, ...currentUser })}
               >
                 <div className="current-user-name">
-                  {userProfile?.displayName || 'สมาชิก'}
+                  <span className={`nametag-style-${userProfile?.nametagStyle || 'default'}`}>
+                    {userProfile?.displayName || 'สมาชิก'}
+                  </span>
+                  {userProfile?.nametagBadge && (
+                    <span className={`footer-nametag-badge nametag-style-${userProfile?.nametagStyle || 'default'}`}>
+                      {userProfile.nametagBadge}
+                    </span>
+                  )}
                   {isAdmin && <span className="admin-tiny-star">★</span>}
                 </div>
                 <div className={`current-user-status ${userProfile?.statusMode === 'offline' ? 'offline' : ''}`}>

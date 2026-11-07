@@ -399,17 +399,26 @@ export default function PostFeed({ type, onOpenCreate, onOpenAuth, onSelectUser,
                     })}
                   />
                   <div className="post-author-details">
-                    <span
-                      className="post-author-name"
-                      onClick={() => onSelectUser(authorLive || {
-                        uid: post.authorId,
-                        displayName: postAuthorName,
-                        photoURL: postAvatar,
-                        role: isPostAdmin ? 'admin' : (post.authorRole || 'member'),
-                      })}
-                    >
-                      {postAuthorName}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span
+                        className={`post-author-name nametag-style-${authorLive?.nametagStyle || 'default'}`}
+                        onClick={() => onSelectUser(authorLive || {
+                          uid: post.authorId,
+                          displayName: postAuthorName,
+                          photoURL: postAvatar,
+                          role: isPostAdmin ? 'admin' : (post.authorRole || 'member'),
+                          nametagStyle: authorLive?.nametagStyle || 'default',
+                          nametagBadge: authorLive?.nametagBadge || '',
+                        })}
+                      >
+                        {postAuthorName}
+                      </span>
+                      {authorLive?.nametagBadge && (
+                        <span className={`post-nametag-badge nametag-style-${authorLive?.nametagStyle || 'default'}`}>
+                          {authorLive.nametagBadge}
+                        </span>
+                      )}
+                    </div>
                     <span className="post-timestamp">
                       {formatTime(post.createdAt)}
                       {post.isEdited && <span className="post-edited-tag">(แก้ไขข้อความแล้ว)</span>}
@@ -986,17 +995,26 @@ function CommentsSection({ postId, usersMap = {}, onOpenAuth, onSelectUser, onOp
               />
               <div className="comment-bubble">
                 <div className="comment-header">
-                  <span
-                    className="comment-author"
-                    onClick={() => onSelectUser(commentAuthorLive || {
-                      uid: comment.authorId,
-                      displayName: commentAuthorName,
-                      photoURL: commentAvatar,
-                      role: isCommentAdmin ? 'admin' : (comment.authorRole || 'member'),
-                    })}
-                  >
-                    {commentAuthorName}
-                  </span>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                    <span
+                      className={`comment-author nametag-style-${commentAuthorLive?.nametagStyle || 'default'}`}
+                      onClick={() => onSelectUser(commentAuthorLive || {
+                        uid: comment.authorId,
+                        displayName: commentAuthorName,
+                        photoURL: commentAvatar,
+                        role: isCommentAdmin ? 'admin' : (comment.authorRole || 'member'),
+                        nametagStyle: commentAuthorLive?.nametagStyle || 'default',
+                        nametagBadge: commentAuthorLive?.nametagBadge || '',
+                      })}
+                    >
+                      {commentAuthorName}
+                    </span>
+                    {commentAuthorLive?.nametagBadge && (
+                      <span className={`comment-nametag-badge nametag-style-${commentAuthorLive?.nametagStyle || 'default'}`}>
+                        {commentAuthorLive.nametagBadge}
+                      </span>
+                    )}
+                  </div>
                   <div className="comment-actions-bar">
                     {currentUser && !isBanned && (
                       <button

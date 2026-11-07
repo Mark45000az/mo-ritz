@@ -1,0 +1,498 @@
+/* ═══════════════════════════════════════════════════════════════
+   Nametag.css — Global Nametag Styles, Glows & Badges
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Container wrapper for name + badge */
+.user-nametag-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  vertical-align: middle;
+}
+
+.user-nametag-container.clickable {
+  cursor: pointer;
+}
+
+/* Base text styling for nametag display name */
+.user-nametag-text,
+.nametag-text {
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  transition: all 0.2s ease;
+  display: inline-block;
+  line-height: 1.25;
+}
+
+/* Nametag Badge / Title chip base styles */
+.user-nametag-badge,
+.nametag-badge-chip,
+[class*="-nametag-badge"] {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.72em;
+  font-weight: 600;
+  padding: 1.5px 7px;
+  border-radius: 9999px;
+  line-height: 1.25;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  vertical-align: middle;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   INDIVIDUAL NAMETAG STYLES (10 THEMES)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ─── 1. Default / Classic (⚪ ธรรมดา) ─── */
+.nametag-style-default.user-nametag-text,
+.nametag-style-default.chat-author-name,
+.nametag-style-default.member-name,
+.nametag-style-default.post-author-name,
+.nametag-style-default.comment-author-name,
+.nametag-style-default.profile-display-name,
+.nametag-style-default.dm-partner-name,
+.nametag-style-default.dm-conv-name,
+.nametag-style-default.announce-author-name,
+.nametag-style-default {
+  color: #f3f4f6;
+}
+.user-nametag-badge.nametag-style-default,
+.nametag-badge-chip.nametag-style-default,
+[class*="-nametag-badge"].nametag-style-default {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  color: #e2e8f0;
+}
+
+/* ─── 2. Neon Purple (💜 นีออนไซเบอร์) ─── */
+.nametag-style-neon-purple.user-nametag-text,
+.nametag-style-neon-purple.chat-author-name,
+.nametag-style-neon-purple.member-name,
+.nametag-style-neon-purple.post-author-name,
+.nametag-style-neon-purple.comment-author-name,
+.nametag-style-neon-purple.profile-display-name,
+.nametag-style-neon-purple.dm-partner-name,
+.nametag-style-neon-purple.dm-conv-name,
+.nametag-style-neon-purple.announce-author-name {
+  background: linear-gradient(135deg, #f5d0fe 0%, #c084fc 48%, #818cf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(192, 132, 252, 0.65));
+}
+.user-nametag-badge.nametag-style-neon-purple,
+.nametag-badge-chip.nametag-style-neon-purple,
+[class*="-nametag-badge"].nametag-style-neon-purple {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.28), rgba(99, 102, 241, 0.22));
+  border: 1px solid rgba(192, 132, 252, 0.65);
+  color: #f3e8ff;
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.35), inset 0 0 6px rgba(192, 132, 252, 0.2);
+}
+
+/* ─── 3. Fire Blaze (🔥 เพลิงอัคคี) ─── */
+.nametag-style-fire-blaze.user-nametag-text,
+.nametag-style-fire-blaze.chat-author-name,
+.nametag-style-fire-blaze.member-name,
+.nametag-style-fire-blaze.post-author-name,
+.nametag-style-fire-blaze.comment-author-name,
+.nametag-style-fire-blaze.profile-display-name,
+.nametag-style-fire-blaze.dm-partner-name,
+.nametag-style-fire-blaze.dm-conv-name,
+.nametag-style-fire-blaze.announce-author-name {
+  background: linear-gradient(135deg, #ffedd5 0%, #fb923c 45%, #ef4444 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(249, 115, 22, 0.7));
+}
+.user-nametag-badge.nametag-style-fire-blaze,
+.nametag-badge-chip.nametag-style-fire-blaze,
+[class*="-nametag-badge"].nametag-style-fire-blaze {
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.28), rgba(245, 158, 11, 0.22));
+  border: 1px solid rgba(249, 115, 22, 0.65);
+  color: #ffedd5;
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.4), inset 0 0 6px rgba(239, 68, 68, 0.2);
+}
+
+/* ─── 4. Cosmic Galaxy (🌌 กาแล็กซีจักรวาล) ─── */
+.nametag-style-cosmic-galaxy.user-nametag-text,
+.nametag-style-cosmic-galaxy.chat-author-name,
+.nametag-style-cosmic-galaxy.member-name,
+.nametag-style-cosmic-galaxy.post-author-name,
+.nametag-style-cosmic-galaxy.comment-author-name,
+.nametag-style-cosmic-galaxy.profile-display-name,
+.nametag-style-cosmic-galaxy.dm-partner-name,
+.nametag-style-cosmic-galaxy.dm-conv-name,
+.nametag-style-cosmic-galaxy.announce-author-name {
+  background: linear-gradient(135deg, #e0e7ff 0%, #a78bfa 50%, #38bdf8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 7px rgba(147, 51, 234, 0.7));
+}
+.user-nametag-badge.nametag-style-cosmic-galaxy,
+.nametag-badge-chip.nametag-style-cosmic-galaxy,
+[class*="-nametag-badge"].nametag-style-cosmic-galaxy {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.75), rgba(88, 28, 135, 0.55));
+  border: 1px solid rgba(167, 139, 250, 0.6);
+  color: #ede9fe;
+  box-shadow: 0 0 12px rgba(147, 51, 234, 0.4), inset 0 0 6px rgba(99, 102, 241, 0.25);
+}
+
+/* ─── 5. Royal Gold (👑 ทองคำจักรพรรดิ) ─── */
+.nametag-style-royal-gold.user-nametag-text,
+.nametag-style-royal-gold.chat-author-name,
+.nametag-style-royal-gold.member-name,
+.nametag-style-royal-gold.post-author-name,
+.nametag-style-royal-gold.comment-author-name,
+.nametag-style-royal-gold.profile-display-name,
+.nametag-style-royal-gold.dm-partner-name,
+.nametag-style-royal-gold.dm-conv-name,
+.nametag-style-royal-gold.announce-author-name {
+  background: linear-gradient(135deg, #fffbeb 0%, #facc15 50%, #d97706 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(234, 179, 8, 0.7));
+}
+.user-nametag-badge.nametag-style-royal-gold,
+.nametag-badge-chip.nametag-style-royal-gold,
+[class*="-nametag-badge"].nametag-style-royal-gold {
+  background: linear-gradient(135deg, rgba(245, 158, 11, 0.28), rgba(217, 119, 6, 0.22));
+  border: 1px solid rgba(251, 191, 36, 0.7);
+  color: #fef08a;
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.35), inset 0 0 6px rgba(251, 191, 36, 0.2);
+}
+
+/* ─── 6. Sakura Blossom (🌸 ซากุระบลอสซั่ม) ─── */
+.nametag-style-sakura-blossom.user-nametag-text,
+.nametag-style-sakura-blossom.chat-author-name,
+.nametag-style-sakura-blossom.member-name,
+.nametag-style-sakura-blossom.post-author-name,
+.nametag-style-sakura-blossom.comment-author-name,
+.nametag-style-sakura-blossom.profile-display-name,
+.nametag-style-sakura-blossom.dm-partner-name,
+.nametag-style-sakura-blossom.dm-conv-name,
+.nametag-style-sakura-blossom.announce-author-name {
+  background: linear-gradient(135deg, #fdf2f8 0%, #f472b6 50%, #db2777 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(244, 114, 182, 0.7));
+}
+.user-nametag-badge.nametag-style-sakura-blossom,
+.nametag-badge-chip.nametag-style-sakura-blossom,
+[class*="-nametag-badge"].nametag-style-sakura-blossom {
+  background: linear-gradient(135deg, rgba(236, 72, 153, 0.28), rgba(244, 114, 182, 0.22));
+  border: 1px solid rgba(244, 114, 182, 0.65);
+  color: #fce7f3;
+  box-shadow: 0 0 10px rgba(236, 72, 153, 0.35), inset 0 0 6px rgba(244, 114, 182, 0.2);
+}
+
+/* ─── 7. Rainbow Prism (🌈 เรนโบว์โฮโลแกรม) ─── */
+@keyframes rainbowFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+.nametag-style-rainbow-prism.user-nametag-text,
+.nametag-style-rainbow-prism.chat-author-name,
+.nametag-style-rainbow-prism.member-name,
+.nametag-style-rainbow-prism.post-author-name,
+.nametag-style-rainbow-prism.comment-author-name,
+.nametag-style-rainbow-prism.profile-display-name,
+.nametag-style-rainbow-prism.dm-partner-name,
+.nametag-style-rainbow-prism.dm-conv-name,
+.nametag-style-rainbow-prism.announce-author-name {
+  background: linear-gradient(90deg, #f43f5e, #fb923c, #facc15, #34d399, #38bdf8, #a855f7, #f43f5e);
+  background-size: 300% 100%;
+  animation: rainbowFlow 4s linear infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(168, 85, 247, 0.55));
+}
+.user-nametag-badge.nametag-style-rainbow-prism,
+.nametag-badge-chip.nametag-style-rainbow-prism,
+[class*="-nametag-badge"].nametag-style-rainbow-prism {
+  background: linear-gradient(135deg, rgba(244, 63, 94, 0.2), rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
+  border: 1px solid rgba(216, 180, 254, 0.65);
+  color: #ffffff;
+  box-shadow: 0 0 12px rgba(168, 85, 247, 0.35);
+}
+
+/* ─── 8. Electric Cyan (⚡ ไซเบอร์อิเล็กทริก) ─── */
+.nametag-style-cyber-cyan.user-nametag-text,
+.nametag-style-cyber-cyan.chat-author-name,
+.nametag-style-cyber-cyan.member-name,
+.nametag-style-cyber-cyan.post-author-name,
+.nametag-style-cyber-cyan.comment-author-name,
+.nametag-style-cyber-cyan.profile-display-name,
+.nametag-style-cyber-cyan.dm-partner-name,
+.nametag-style-cyber-cyan.dm-conv-name,
+.nametag-style-cyber-cyan.announce-author-name {
+  background: linear-gradient(135deg, #ecfeff 0%, #22d3ee 50%, #0284c7 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(6, 182, 212, 0.7));
+}
+.user-nametag-badge.nametag-style-cyber-cyan,
+.nametag-badge-chip.nametag-style-cyber-cyan,
+[class*="-nametag-badge"].nametag-style-cyber-cyan {
+  background: linear-gradient(135deg, rgba(6, 182, 212, 0.28), rgba(14, 165, 233, 0.22));
+  border: 1px solid rgba(34, 211, 238, 0.65);
+  color: #cffafe;
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.4), inset 0 0 6px rgba(34, 211, 238, 0.2);
+}
+
+/* ─── 9. Emerald Forest (🍃 มรกตพงไพร) ─── */
+.nametag-style-emerald-forest.user-nametag-text,
+.nametag-style-emerald-forest.chat-author-name,
+.nametag-style-emerald-forest.member-name,
+.nametag-style-emerald-forest.post-author-name,
+.nametag-style-emerald-forest.comment-author-name,
+.nametag-style-emerald-forest.profile-display-name,
+.nametag-style-emerald-forest.dm-partner-name,
+.nametag-style-emerald-forest.dm-conv-name,
+.nametag-style-emerald-forest.announce-author-name {
+  background: linear-gradient(135deg, #ecfdf5 0%, #34d399 50%, #059669 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(16, 185, 129, 0.65));
+}
+.user-nametag-badge.nametag-style-emerald-forest,
+.nametag-badge-chip.nametag-style-emerald-forest,
+[class*="-nametag-badge"].nametag-style-emerald-forest {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.26), rgba(5, 150, 105, 0.22));
+  border: 1px solid rgba(52, 211, 153, 0.65);
+  color: #d1fae5;
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.35), inset 0 0 6px rgba(52, 211, 153, 0.2);
+}
+
+/* ─── 10. Dark Phantom (🖤 ดาร์กแฟนธอม) ─── */
+.nametag-style-dark-phantom.user-nametag-text,
+.nametag-style-dark-phantom.chat-author-name,
+.nametag-style-dark-phantom.member-name,
+.nametag-style-dark-phantom.post-author-name,
+.nametag-style-dark-phantom.comment-author-name,
+.nametag-style-dark-phantom.profile-display-name,
+.nametag-style-dark-phantom.dm-partner-name,
+.nametag-style-dark-phantom.dm-conv-name,
+.nametag-style-dark-phantom.announce-author-name {
+  background: linear-gradient(135deg, #ffffff 0%, #cbd5e1 45%, #64748b 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 0 6px rgba(148, 163, 184, 0.6));
+}
+.user-nametag-badge.nametag-style-dark-phantom,
+.nametag-badge-chip.nametag-style-dark-phantom,
+[class*="-nametag-badge"].nametag-style-dark-phantom {
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.7));
+  border: 1px solid rgba(148, 163, 184, 0.55);
+  color: #f1f5f9;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.6), inset 0 0 6px rgba(148, 163, 184, 0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   NAMETAG CUSTOMIZATION UI (IN USER PROFILE MODAL)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Live Preview Card */
+.nametag-live-preview-box {
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.nametag-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #a78bfa;
+  font-weight: 600;
+}
+
+.nametag-preview-screen {
+  background: #100e19;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 48px;
+}
+
+.nametag-preview-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  object-fit: cover;
+  flex-shrink: 0;
+}
+
+.nametag-preview-name-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.nametag-preview-name {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+/* Style Selector Grid */
+.nametag-styles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.nametag-style-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  padding: 8px 10px;
+  border-radius: 10px;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  text-align: left;
+}
+
+.nametag-style-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(139, 92, 246, 0.4);
+  transform: translateY(-1px);
+}
+
+.nametag-style-btn.active {
+  background: rgba(139, 92, 246, 0.22);
+  border-color: #8b5cf6;
+  color: #fff;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.35);
+}
+
+.nametag-style-btn-icon {
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+.nametag-style-btn-name {
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Nametag Badges Row */
+.nametag-badges-presets-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+
+.nametag-badge-preset-btn {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #cbd5e1;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.nametag-badge-preset-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(139, 92, 246, 0.4);
+  color: #fff;
+}
+
+.nametag-badge-preset-btn.active {
+  background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(99, 102, 241, 0.3));
+  border-color: #8b5cf6;
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 0 10px rgba(139, 92, 246, 0.3);
+}
+
+.nametag-badge-clear-btn {
+  background: rgba(239, 68, 68, 0.12);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  color: #fca5a5;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-size: 11px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.nametag-badge-clear-btn:hover {
+  background: rgba(239, 68, 68, 0.25);
+  color: #fff;
+}
+
+/* Custom Nametag Badge Input */
+.nametag-custom-badge-input-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.nametag-custom-badge-input {
+  width: 100%;
+  background: #110e1b;
+  border: 1px solid rgba(139, 92, 246, 0.25);
+  color: #fff;
+  padding: 9px 38px 9px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  outline: none;
+  transition: all 0.15s ease;
+}
+
+.nametag-custom-badge-input:focus {
+  border-color: #8b5cf6;
+  box-shadow: 0 0 12px rgba(139, 92, 246, 0.3);
+}
+
+.nametag-custom-badge-clear {
+  position: absolute;
+  right: 10px;
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  line-height: 1;
+}
+
+.nametag-custom-badge-clear:hover {
+  color: #f87171;
+}
+
+/* Profile headline in view mode */
+.profile-nametag-headline {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}

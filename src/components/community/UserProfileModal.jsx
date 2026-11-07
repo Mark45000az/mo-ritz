@@ -5,6 +5,8 @@ import { useAuth } from '../../context/AuthContext'
 import { compressImage } from '../../lib/imageUpload'
 import { getUserStatusText, isUserOnline } from '../../lib/presence'
 import { isReservedName } from '../../lib/contentFilter'
+import { NAMETAG_STYLES, PRESET_NAMETAG_BADGES } from '../../lib/nametagConfig'
+import UserNametag from './UserNametag'
 import LikersModal from './LikersModal'
 import '../../styles/UserProfileModal.css'
 
@@ -49,6 +51,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
   const [bio, setBio] = useState(userProfile?.bio || '')
   const [hobbyTag, setHobbyTag] = useState(userProfile?.hobbyTag || '')
   const [avatarFrame, setAvatarFrame] = useState(userProfile?.avatarFrame || 'none')
+  const [nametagStyle, setNametagStyle] = useState(userProfile?.nametagStyle || 'default')
+  const [nametagBadge, setNametagBadge] = useState(userProfile?.nametagBadge || '')
   const [newAvatar, setNewAvatar] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [coverGradient, setCoverGradient] = useState(COVER_PRESETS[0].gradient)
@@ -89,6 +93,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
       setBio(user.bio || '')
       setHobbyTag(user.hobbyTag || '')
       setAvatarFrame(user.avatarFrame || 'none')
+      setNametagStyle(user.nametagStyle || 'default')
+      setNametagBadge(user.nametagBadge || '')
     }
     if (!user?.uid && !user?.id) return
     const uid = user.uid || user.id
@@ -103,6 +109,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
         if (data.bio !== undefined) setBio(data.bio)
         if (data.hobbyTag !== undefined) setHobbyTag(data.hobbyTag)
         if (data.avatarFrame) setAvatarFrame(data.avatarFrame)
+        if (data.nametagStyle) setNametagStyle(data.nametagStyle)
+        if (data.nametagBadge !== undefined) setNametagBadge(data.nametagBadge)
       }
     })
     return () => unsub()
@@ -117,6 +125,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
       if (userProfile.bio !== undefined) setBio(userProfile.bio)
       if (userProfile.hobbyTag !== undefined) setHobbyTag(userProfile.hobbyTag)
       if (userProfile.avatarFrame) setAvatarFrame(userProfile.avatarFrame)
+      if (userProfile.nametagStyle) setNametagStyle(userProfile.nametagStyle)
+      if (userProfile.nametagBadge !== undefined) setNametagBadge(userProfile.nametagBadge)
     }
   }, [isOwnProfile, userProfile])
 
@@ -242,6 +252,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
         coverGradient,
         coverImage,
         statusMode,
+        nametagStyle,
+        nametagBadge: nametagBadge.trim(),
       }
       if (newAvatar) {
         updates.photoURL = newAvatar
@@ -373,7 +385,16 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
             <>
               <div className="profile-info-block">
                 <div className="profile-name-row">
-                  <h3 className="profile-display-name">{liveUser?.displayName || 'สมาชิก'}</h3>
+                  <div className="profile-nametag-headline">
+                    <h3 className={`profile-display-name nametag-style-${liveUser?.nametagStyle || 'default'}`}>
+                      {liveUser?.displayName || 'สมาชิก'}
+                    </h3>
+                    {liveUser?.nametagBadge && (
+                      <span className={`nametag-badge-chip nametag-style-${liveUser?.nametagStyle || 'default'}`}>
+                        {liveUser.nametagBadge}
+                      </span>
+                    )}
+                  </div>
                   {isTargetAdmin && (
                     <span className="profile-role-badge admin" title="ผู้ดูแลระบบ (Big Boss)">
                       👑 Big Boss
@@ -442,6 +463,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                       setBio(userProfile?.bio || '')
                       setHobbyTag(userProfile?.hobbyTag || '')
                       setAvatarFrame(userProfile?.avatarFrame || 'none')
+                      setNametagStyle(userProfile?.nametagStyle || liveUser?.nametagStyle || 'default')
+                      setNametagBadge(userProfile?.nametagBadge || liveUser?.nametagBadge || '')
                       setCoverGradient(userProfile?.coverGradient || COVER_PRESETS[0].gradient)
                       setCoverImage(userProfile?.coverImage || null)
                       setCoverUrlInput(userProfile?.coverImage && (userProfile.coverImage.startsWith('http://') || userProfile.coverImage.startsWith('https://')) ? userProfile.coverImage : '')
@@ -493,6 +516,104 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                   maxLength={30}
                   required
                 />
+              </div>
+
+              {/* Nametag Customization */}
+              <div className="profile-edit-field">
+                <label>✨ ปรับแต่งเนมแท็ก (Nametag):</label>
+
+                {/* Live Preview Screen */}
+                <div className="nametag-live-preview-box">
+                  <div className="nametag-preview-header">
+                    <span>ตัวอย่างเนมแท็กของคุณ</span>
+                    <span>สไตล์: {NAMETAG_STYLES.find((s) => s.id === nametagStyle)?.name || 'ธรรมดา'}</span>
+                  </div>
+                  <div className="nametag-preview-screen">
+                    <img
+                      src={displayedAvatar}
+                      alt="Preview"
+                      className="nametag-preview-avatar"
+                    />
+                    <div className="nametag-preview-name-wrap">
+                      <UserNametag
+                        name={displayName.trim() || 'ชื่อของคุณ'}
+                        style={nametagStyle}
+                        badge={nametagBadge.trim()}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 1. Style Selection Grid */}
+                <div style={{ marginBottom: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
+                  เลือกเอฟเฟกต์สไตล์เนมแท็ก (10 แบบ):
+                </div>
+                <div className="nametag-styles-grid">
+                  {NAMETAG_STYLES.map((st) => (
+                    <button
+                      key={st.id}
+                      type="button"
+                      className={`nametag-style-btn ${nametagStyle === st.id ? 'active' : ''}`}
+                      onClick={() => setNametagStyle(st.id)}
+                      title={st.desc}
+                    >
+                      <span className="nametag-style-btn-icon">{st.icon}</span>
+                      <span className="nametag-style-btn-name">{st.name}</span>
+                    </button>
+                  ))}
+                </div>
+
+                {/* 2. Badge Presets */}
+                <div style={{ marginBottom: '6px', fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>
+                  เลือกป้ายฉายาเนมแท็ก:
+                </div>
+                <div className="nametag-badges-presets-row">
+                  {PRESET_NAMETAG_BADGES.map((b) => (
+                    <button
+                      key={b}
+                      type="button"
+                      className={`nametag-badge-preset-btn ${nametagBadge === b ? 'active' : ''}`}
+                      onClick={() => setNametagBadge(nametagBadge === b ? '' : b)}
+                    >
+                      {b}
+                    </button>
+                  ))}
+                  {nametagBadge && (
+                    <button
+                      type="button"
+                      className="nametag-badge-clear-btn"
+                      onClick={() => setNametagBadge('')}
+                      title="ล้างป้ายฉายา"
+                    >
+                      ✕ ไม่ใส่ป้าย
+                    </button>
+                  )}
+                </div>
+
+                {/* 3. Custom Badge Input */}
+                <div className="nametag-custom-badge-input-row">
+                  <input
+                    type="text"
+                    className="nametag-custom-badge-input"
+                    placeholder="🏷️ หรือพิมพ์ป้ายฉายาเอง (เช่น เทพสายฟ้า, มอนสเตอร์ตัวน้อย)..."
+                    value={nametagBadge}
+                    maxLength={24}
+                    onChange={(e) => setNametagBadge(e.target.value)}
+                  />
+                  {nametagBadge && (
+                    <button
+                      type="button"
+                      className="nametag-custom-badge-clear"
+                      onClick={() => setNametagBadge('')}
+                      title="ลบข้อความ"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+                <span className="profile-field-hint" style={{ marginTop: '4px' }}>
+                  💡 ป้ายฉายาจะแสดงเคียงข้างชื่อของคุณในแชท โพสต์ และแถบรายชื่อสมาชิก
+                </span>
               </div>
 
               {/* Bio / Status Message */}

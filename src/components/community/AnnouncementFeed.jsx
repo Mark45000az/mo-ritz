@@ -30,6 +30,7 @@ const EMOJI_GROUPS = [
 export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
   const { currentUser, userProfile, isAdmin } = useAuth()
   const [announcements, setAnnouncements] = useState([])
+  const [usersMap, setUsersMap] = useState({})
   const [loading, setLoading] = useState(true)
 
   // Compose state (admin only)
@@ -76,6 +77,18 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [lightbox])
+
+  // Real-time listener for users directory
+  useEffect(() => {
+    const unsub = onSnapshot(collection(firestore, 'users'), (snap) => {
+      const map = {}
+      snap.docs.forEach((d) => {
+        map[d.id] = { uid: d.id, ...d.data() }
+      })
+      setUsersMap(map)
+    })
+    return () => unsub()
+  }, [])
 
   // Real-time listener
   useEffect(() => {
@@ -337,24 +350,35 @@ export default function AnnouncementFeed({ onSelectUser, onOpenAuth }) {
             const reactionEntries = Object.entries(reactions).filter(([, uids]) => uids?.length > 0)
             const hasImages = ann.images?.length > 0
 
+            const authorLive = usersMap[ann.authorId]
+            const annAuthorName = authorLive?.displayName || ann.authorName || 'Moritz'
+            const annNametagStyle = authorLive?.nametagStyle || (ann.authorId === currentUser?.uid ? userProfile?.nametagStyle : null) || 'royal-gold'
+            const annNametagBadge = authorLive?.nametagBadge || (ann.authorId === currentUser?.uid ? userProfile?.nametagBadge : null) || ''
+            const annAvatar = authorLive?.photoURL || ann.authorPhoto || '/profile.jpg'
+
             return (
               <article key={ann.id} className="announce-card">
                 {/* Card Header */}
                 <div className="announce-card-header">
                   <img
-                    src={ann.authorPhoto || '/profile.jpg'}
-                    alt={ann.authorName}
+                    src={annAvatar}
+                    alt={annAuthorName}
                     className="announce-author-avatar"
-                    onClick={() => onSelectUser({ uid: ann.authorId, displayName: ann.authorName, photoURL: ann.authorPhoto, role: 'admin' })}
+                    onClick={() => onSelectUser(authorLive || { uid: ann.authorId, displayName: annAuthorName, photoURL: annAvatar, role: 'admin', nametagStyle: annNametagStyle, nametagBadge: annNametagBadge })}
                   />
                   <div className="announce-author-info">
                     <div className="announce-author-name-row">
                       <span
-                        className="announce-author-name"
-                        onClick={() => onSelectUser({ uid: ann.authorId, displayName: ann.authorName, photoURL: ann.authorPhoto, role: 'admin' })}
+                        className={`announce-author-name nametag-style-${annNametagStyle}`}
+                        onClick={() => onSelectUser(authorLive || { uid: ann.authorId, displayName: annAuthorName, photoURL: annAvatar, role: 'admin', nametagStyle: annNametagStyle, nametagBadge: annNametagBadge })}
                       >
-                        {ann.authorName}
+                        {annAuthorName}
                       </span>
+                      {annNametagBadge && (
+                        <span className={`announce-nametag-badge nametag-style-${annNametagStyle}`}>
+                          {annNametagBadge}
+                        </span>
+                      )}
                       <span className="announce-admin-pill">👑 Big Boss</span>
                     </div>
                     <span className="announce-timestamp">

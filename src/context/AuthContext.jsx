@@ -139,7 +139,9 @@ export function AuthProvider({ children }) {
       avatarFrame,
       coverGradient,
       coverImage,
-      statusMode
+      statusMode,
+      nametagStyle,
+      nametagBadge,
     } = profileData
 
     const updates = {}
@@ -151,6 +153,8 @@ export function AuthProvider({ children }) {
     if (coverGradient !== undefined) updates.coverGradient = coverGradient
     if (coverImage !== undefined) updates.coverImage = coverImage
     if (statusMode !== undefined) updates.statusMode = statusMode
+    if (nametagStyle !== undefined) updates.nametagStyle = nametagStyle
+    if (nametagBadge !== undefined) updates.nametagBadge = nametagBadge
 
     // Update in Firebase Auth (Firebase Auth only accepts URLs < 2048 chars, not data URLs)
     const authUpdates = {}

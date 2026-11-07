@@ -411,9 +411,16 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
                 ? rawPhoto
                 : (isMsgAdmin ? '/profile.jpg' : '/NewUserProfile.png'))
 
+          const authorUser = usersMap[msg.authorId]
           const dynamicName = (currentUser?.uid === msg.authorId && userProfile?.displayName)
             ? userProfile.displayName
-            : (usersMap[msg.authorId]?.displayName || msg.authorName || 'สมาชิก')
+            : (authorUser?.displayName || msg.authorName || 'สมาชิก')
+          const msgNametagStyle = (currentUser?.uid === msg.authorId && userProfile?.nametagStyle)
+            ? userProfile.nametagStyle
+            : (authorUser?.nametagStyle || 'default')
+          const msgNametagBadge = (currentUser?.uid === msg.authorId && userProfile?.nametagBadge)
+            ? userProfile.nametagBadge
+            : (authorUser?.nametagBadge || '')
 
           return (
             <div key={msg.id} id={`chat-msg-${msg.id}`} className="chat-message-item">
@@ -421,11 +428,13 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
                 src={dynamicPhoto}
                 alt={dynamicName}
                 className="chat-message-avatar"
-                onClick={() => onSelectUser({
+                onClick={() => onSelectUser(authorUser || {
                   uid: msg.authorId,
                   displayName: dynamicName,
                   photoURL: dynamicPhoto,
-                  role: isMsgAdmin ? 'admin' : (usersMap[msg.authorId]?.role || msg.authorRole || 'member'),
+                  role: isMsgAdmin ? 'admin' : (authorUser?.role || msg.authorRole || 'member'),
+                  nametagStyle: msgNametagStyle,
+                  nametagBadge: msgNametagBadge,
                 })}
               />
 
@@ -445,16 +454,23 @@ export default function GeneralChat({ onOpenAuth, onSelectUser }) {
 
                 <div className="chat-message-header">
                   <span
-                    className="chat-author-name"
-                    onClick={() => onSelectUser({
+                    className={`chat-author-name nametag-style-${msgNametagStyle}`}
+                    onClick={() => onSelectUser(authorUser || {
                       uid: msg.authorId,
                       displayName: dynamicName,
                       photoURL: dynamicPhoto,
-                      role: isMsgAdmin ? 'admin' : (usersMap[msg.authorId]?.role || msg.authorRole || 'member'),
+                      role: isMsgAdmin ? 'admin' : (authorUser?.role || msg.authorRole || 'member'),
+                      nametagStyle: msgNametagStyle,
+                      nametagBadge: msgNametagBadge,
                     })}
                   >
                     {dynamicName}
                   </span>
+                  {msgNametagBadge && (
+                    <span className={`chat-nametag-badge nametag-style-${msgNametagStyle}`}>
+                      {msgNametagBadge}
+                    </span>
+                  )}
                   {isMsgAdmin && <span className="chat-admin-pill">👑 Big Boss</span>}
                   <span className="chat-timestamp">{formatTime(msg.createdAt)}</span>
                   {msg.isEdited && <span className="chat-edited-label">(แก้ไขแล้ว)</span>}

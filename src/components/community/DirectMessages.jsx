@@ -461,7 +461,7 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                   />
                   <div className="dm-conv-info">
                     <div className="dm-conv-top-row">
-                      <span className="dm-conv-name">{otherUser.displayName}</span>
+                      <span className={`dm-conv-name nametag-style-${otherUser.nametagStyle || 'default'}`}>{otherUser.displayName}</span>
                       {showUnread && (
                         <span className="dm-conv-unread-badge" title={`${unreadCount} ข้อความใหม่`}>
                           {unreadCount > 99 ? '99+' : unreadCount}
@@ -511,12 +511,19 @@ export default function DirectMessages({ activeUser, onSelectUser, onOpenAuth })
                     onClick={() => onSelectUser(livePartner)}
                   />
                   <div className="dm-partner-info">
-                    <span
-                      className="dm-partner-name"
-                      onClick={() => onSelectUser(livePartner)}
-                    >
-                      {livePartner.displayName}
-                    </span>
+                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                      <span
+                        className={`dm-partner-name nametag-style-${livePartner.nametagStyle || 'default'}`}
+                        onClick={() => onSelectUser(livePartner)}
+                      >
+                        {livePartner.displayName}
+                      </span>
+                      {livePartner.nametagBadge && (
+                        <span className={`dm-partner-nametag-badge nametag-style-${livePartner.nametagStyle || 'default'}`}>
+                          {livePartner.nametagBadge}
+                        </span>
+                      )}
+                    </div>
                     <span className="dm-partner-status">
                       {isBlocked
                         ? '🚫 คุณบล็อกผู้ใช้นี้อยู่'
