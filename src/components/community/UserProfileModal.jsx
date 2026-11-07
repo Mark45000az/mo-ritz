@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { doc, updateDoc, arrayUnion, arrayRemove, onSnapshot, collection } from 'firebase/firestore'
 import { firestore } from '../../lib/firebase'
 import { useAuth } from '../../context/AuthContext'
-import { compressImage } from '../../lib/imageUpload'
+import { compressImage, uploadToStorage } from '../../lib/imageUpload'
 import { getUserStatusText, isUserOnline } from '../../lib/presence'
 import { isReservedName } from '../../lib/contentFilter'
 import LikersModal from './LikersModal'
@@ -53,6 +53,8 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [coverGradient, setCoverGradient] = useState(COVER_PRESETS[0].gradient)
   const [coverImage, setCoverImage] = useState(null)
+  const [coverUrlInput, setCoverUrlInput] = useState('')
+  const [coverUploading, setCoverUploading] = useState(false)
   const [statusMode, setStatusMode] = useState('online') // 'online' | 'offline'
   const [saving, setSaving] = useState(false)
   const [heartSaving, setHeartSaving] = useState(false)
@@ -160,28 +162,53 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
     }
   }
 
-  // Cover image / GIF upload handler
+  // Cover image / GIF upload handler (with Firebase Storage auto-upload & size safety)
   const handleCoverUpload = async (e) => {
     const file = e.target.files?.[0]
     if (!file) return
     setError('')
+    setCoverUploading(true)
     try {
+      // 1. ลองอัปโหลดขึ้น Firebase Storage ก่อน (ถ้าพร้อมใช้งาน)
+      if (currentUser?.uid) {
+        try {
+          const ext = file.name ? file.name.split('.').pop() : (file.type === 'image/gif' ? 'gif' : 'png')
+          const path = `covers/${currentUser.uid}_${Date.now()}.${ext}`
+          const downloadUrl = await uploadToStorage(file, path)
+          setCoverImage(downloadUrl)
+          setCoverUrlInput('')
+          setCoverUploading(false)
+          return
+        } catch (storageErr) {
+          console.warn('[handleCoverUpload] Storage upload fallback to local data URL:', storageErr.message)
+        }
+      }
+
+      // 2. ถ้า Storage ไม่ผ่าน (fallback) ให้เก็บเป็น Data URL
       if (file.type === 'image/gif') {
-        if (file.size > 2 * 1024 * 1024) {
-          setError('ขนาดไฟล์ GIF พื้นหลังต้องไม่เกิน 2MB')
+        // Firestore จำกัดขนาดเอกสารไว้ที่ 1MB (1,048,576 bytes)
+        // เมื่อแปลงเป็น Base64 จะเพิ่มขึ้น 1.33 เท่า ดังนั้นขนาดไฟล์ GIF ไม่ควรเกิน ~800KB
+        if (file.size > 800 * 1024) {
+          setError(`ไฟล์ GIF นี้มีขนาด ${(file.size / (1024 * 1024)).toFixed(1)}MB ซึ่งเกินขีดจำกัดความจุ 800KB ของฐานข้อมูล แนะนำให้ใช้ไฟล์ GIF ขนาดไม่เกิน 800KB หรือคัดลอกลิงก์ GIF จากเว็บมาวางในช่องด้านล่างแทน`)
+          setCoverUploading(false)
           return
         }
         const reader = new FileReader()
         reader.onload = () => {
           setCoverImage(reader.result)
+          setCoverUrlInput('')
+          setCoverUploading(false)
         }
         reader.readAsDataURL(file)
       } else {
         const compressed = await compressImage(file, { maxWidth: 960, maxHeight: 450, quality: 0.82 })
         setCoverImage(compressed)
+        setCoverUrlInput('')
+        setCoverUploading(false)
       }
     } catch (err) {
       setError('อัปโหลดรูปพื้นหลังไม่สำเร็จ: ' + err.message)
+      setCoverUploading(false)
     }
   }
 
@@ -198,6 +225,20 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
       setError('ชื่อนี้ไม่สามารถใช้ได้ เนื่องจากเป็นชื่อสงวนของระบบหรือ admin')
       return
     }
+
+    // ตรวจสอบขนาด Data URLs รวมไม่ให้เกินขีดจำกัด 1MB ของ Firestore
+    let estimatedSize = 0
+    if (coverImage && coverImage.startsWith('data:')) {
+      estimatedSize += coverImage.length
+    }
+    if (newAvatar && newAvatar.startsWith('data:')) {
+      estimatedSize += newAvatar.length
+    }
+    if (estimatedSize > 950 * 1024) {
+      setError('รูปภาพที่เลือกมีขนาดรวมใหญ่เกินไปสำหรับฐานข้อมูล (เกิน 1MB) กรุณาใช้ไฟล์รูปที่ขนาดเล็กลง หรือใช้วิธีวางลิงก์ URL แทน')
+      return
+    }
+
     setSaving(true)
     setError('')
     try {
@@ -286,19 +327,23 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
           {isOwnProfile && editing && (
             <div className="cover-edit-actions">
               <label className="cover-upload-btn" title="อัปโหลดรูปภาพหรือ GIF พื้นหลัง">
-                🖼️ เปลี่ยนพื้นหลัง
+                {coverUploading ? '⏳ กำลังอัปโหลด...' : '🖼️ เปลี่ยนพื้นหลัง'}
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleCoverUpload}
                   style={{ display: 'none' }}
+                  disabled={coverUploading}
                 />
               </label>
               {coverImage && (
                 <button
                   type="button"
                   className="cover-remove-btn"
-                  onClick={() => setCoverImage(null)}
+                  onClick={() => {
+                    setCoverImage(null)
+                    setCoverUrlInput('')
+                  }}
                   title="ใช้สี Gradient แทน"
                 >
                   ✕ ลบรูป
@@ -407,6 +452,7 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                       setAvatarFrame(userProfile?.avatarFrame || 'none')
                       setCoverGradient(userProfile?.coverGradient || COVER_PRESETS[0].gradient)
                       setCoverImage(userProfile?.coverImage || null)
+                      setCoverUrlInput(userProfile?.coverImage && (userProfile.coverImage.startsWith('http://') || userProfile.coverImage.startsWith('https://')) ? userProfile.coverImage : '')
                       setStatusMode(userProfile?.statusMode || 'online')
                       setEditing(true)
                     }}
@@ -518,11 +564,49 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                       onClick={() => {
                         setCoverGradient(p.gradient)
                         setCoverImage(null)
+                        setCoverUrlInput('')
                       }}
                       title={p.name}
                     />
                   ))}
                 </div>
+              </div>
+
+              {/* Cover Image / GIF via URL (No size limit!) */}
+              <div className="profile-edit-field">
+                <label htmlFor="coverUrlInput">หรือใส่ลิงก์รูปภาพ / GIF พื้นหลัง (URL จากเว็บ):</label>
+                <div className="cover-url-input-row">
+                  <input
+                    id="coverUrlInput"
+                    type="url"
+                    placeholder="https://... วางลิงก์รูปภาพ หรือ GIF จากเว็บ"
+                    value={coverUrlInput}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      setCoverUrlInput(val)
+                      if (val.trim()) {
+                        setCoverImage(val.trim())
+                      }
+                    }}
+                    className="cover-url-input"
+                  />
+                  {coverImage && (
+                    <button
+                      type="button"
+                      className="cover-url-clear-btn"
+                      onClick={() => {
+                        setCoverUrlInput('')
+                        setCoverImage(null)
+                      }}
+                      title="ลบรูปพื้นหลัง"
+                    >
+                      ✕ ลบ
+                    </button>
+                  )}
+                </div>
+                <span className="profile-field-hint">
+                  💡 แนะนำ: สามารถคลิกขวาที่ภาพ GIF บนเว็บ แล้วเลือก "คัดลอกที่อยู่รูปภาพ" (Copy image address) มาวางได้ ไม่จำกัดขนาดไฟล์!
+                </span>
               </div>
 
               {/* Online / Offline Status Toggle */}

@@ -1,8 +1,18 @@
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage'
+import { storage } from './firebase'
+
 /**
  * imageUpload.js — Utility to compress and prepare images for upload.
  * Compresses images client-side into lightweight WebP/JPEG data URLs
- * or uploads to free hosting, keeping Firestore documents small (< 300KB).
+ * or uploads to Firebase Storage, keeping Firestore documents small (< 300KB).
  */
+
+export async function uploadToStorage(file, path) {
+  if (!storage) throw new Error('Firebase Storage is not initialized')
+  const storageRef = ref(storage, path)
+  await uploadBytes(storageRef, file)
+  return await getDownloadURL(storageRef)
+}
 
 export async function compressImage(file, { maxWidth = 1200, maxHeight = 1200, quality = 0.75 } = {}) {
   return new Promise((resolve, reject) => {
