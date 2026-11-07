@@ -72,13 +72,12 @@
 
 .profile-modal-cover {
   position: relative;
-  height: 130px;
+  height: 135px;
   background-size: cover;
   background-position: center;
   overflow: hidden;
   border-top-left-radius: 20px;
   border-top-right-radius: 20px;
-  z-index: 1;
 }
 
 .profile-modal-cover-img {
@@ -94,56 +93,66 @@
 
 .cover-edit-actions {
   position: absolute;
-  bottom: 10px;
-  right: 12px;
+  bottom: 12px;
+  right: 14px;
   display: flex;
   gap: 8px;
-  z-index: 3;
+  z-index: 25;
+  pointer-events: auto;
 }
 
 .cover-upload-btn {
-  background: rgba(0, 0, 0, 0.7);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   color: #fff;
   font-size: 12px;
-  font-weight: 500;
-  padding: 5px 12px;
+  font-weight: 600;
+  padding: 6px 14px;
   border-radius: 9999px;
   cursor: pointer;
   transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  pointer-events: auto;
+  user-select: none;
 }
 
 .cover-upload-btn:hover {
-  background: rgba(139, 92, 246, 0.75);
-  border-color: #8b5cf6;
+  background: rgba(139, 92, 246, 0.85);
+  border-color: #a78bfa;
+  transform: translateY(-1px);
 }
 
 .cover-remove-btn {
-  background: rgba(239, 68, 68, 0.75);
-  border: none;
+  background: rgba(239, 68, 68, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
   font-size: 11px;
-  padding: 5px 10px;
+  font-weight: 600;
+  padding: 6px 12px;
   border-radius: 9999px;
   cursor: pointer;
-  transition: background 0.15s ease;
+  transition: all 0.15s ease;
+  pointer-events: auto;
 }
 
 .cover-remove-btn:hover {
-  background: rgba(239, 68, 68, 0.95);
+  background: rgba(239, 68, 68, 1);
+  transform: translateY(-1px);
 }
 
 .profile-modal-body {
-  padding: 20px 24px 24px;
+  padding: 0 24px 24px;
   position: relative;
-  margin-top: -50px;
-  z-index: 10;
+  /* ไม่ดึง body ขึ้นไปทับ cover เพื่อไม่ให้บล็อกการกดปุ่มเปลี่ยนพื้นหลัง */
 }
 
 /* Avatar & Frames */
 .profile-modal-avatar-wrapper {
   position: relative;
+  margin-top: -48px; /* เฉพาะรูป Avatar เท่านั้นที่ดึงขึ้นไปทับขอบ Cover ฝั่งซ้าย */
   z-index: 15;
   width: 94px;
   height: 94px;
@@ -655,6 +664,56 @@
 .cover-url-clear-btn:hover {
   background: rgba(239, 68, 68, 0.35);
   color: #fff;
+}
+
+/* Inline Cover Buttons in Form */
+.cover-edit-inline-buttons {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.btn-cover-inline-upload {
+  background: rgba(139, 92, 246, 0.18);
+  border: 1px solid rgba(139, 92, 246, 0.45);
+  color: #c4b5fd;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 16px;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.btn-cover-inline-upload:hover {
+  background: rgba(139, 92, 246, 0.32);
+  border-color: #8b5cf6;
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.btn-cover-inline-remove {
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.4);
+  color: #fca5a5;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-cover-inline-remove:hover {
+  background: rgba(239, 68, 68, 0.35);
+  color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .profile-field-hint {

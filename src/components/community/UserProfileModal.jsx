@@ -572,14 +572,39 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                 </div>
               </div>
 
-              {/* Cover Image / GIF via URL (No size limit!) */}
+              {/* Cover Image / GIF via File or URL (No size limit!) */}
               <div className="profile-edit-field">
-                <label htmlFor="coverUrlInput">หรือใส่ลิงก์รูปภาพ / GIF พื้นหลัง (URL จากเว็บ):</label>
-                <div className="cover-url-input-row">
+                <label>รูปภาพหรือ GIF พื้นหลัง:</label>
+                <div className="cover-edit-inline-buttons">
+                  <label className="btn-cover-inline-upload" title="อัปโหลดรูปภาพหรือ GIF จากเครื่อง">
+                    {coverUploading ? '⏳ กำลังอัปโหลด...' : '📁 เลือกไฟล์ภาพ / GIF จากเครื่อง'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleCoverUpload}
+                      style={{ display: 'none' }}
+                      disabled={coverUploading}
+                    />
+                  </label>
+                  {coverImage && (
+                    <button
+                      type="button"
+                      className="btn-cover-inline-remove"
+                      onClick={() => {
+                        setCoverImage(null)
+                        setCoverUrlInput('')
+                      }}
+                    >
+                      ✕ ลบรูปพื้นหลัง
+                    </button>
+                  )}
+                </div>
+
+                <div className="cover-url-input-row" style={{ marginTop: '8px' }}>
                   <input
                     id="coverUrlInput"
                     type="url"
-                    placeholder="https://... วางลิงก์รูปภาพ หรือ GIF จากเว็บ"
+                    placeholder="🔗 หรือวางลิงก์รูปภาพ / GIF จากเว็บ (https://...)"
                     value={coverUrlInput}
                     onChange={(e) => {
                       const val = e.target.value
@@ -600,12 +625,12 @@ export default function UserProfileModal({ user, isOpen, onClose, onStartDM }) {
                       }}
                       title="ลบรูปพื้นหลัง"
                     >
-                      ✕ ลบ
+                      ✕
                     </button>
                   )}
                 </div>
                 <span className="profile-field-hint">
-                  💡 แนะนำ: สามารถคลิกขวาที่ภาพ GIF บนเว็บ แล้วเลือก "คัดลอกที่อยู่รูปภาพ" (Copy image address) มาวางได้ ไม่จำกัดขนาดไฟล์!
+                  💡 แนะนำ: สามารถคลิกขวาที่ภาพ GIF บนเว็บ แล้วเลือก "คัดลอกที่อยู่รูปภาพ" (Copy image address) มาวางได้ ไม่จำกัดขนาดไฟล์
                 </span>
               </div>
 
